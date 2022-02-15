@@ -25,7 +25,7 @@
 <h3 align="center">OpenAstroFirmware</h3>
 
   <p align="center">
-    Official Firmware for DIY astronomical telescope mounts. This firmware is the 2.x successor of the [OpenAstroTracker-Firmware](https://github.com/OpenAstroTech/OpenAstroTracker-Firmware).
+    Official Firmware for DIY astronomical telescope mounts. This firmware is the 2.x successor of the <a href="https://github.com/OpenAstroTech/OpenAstroTracker-Firmware">OpenAstroTracker-Firmware</a>.
     <br />
     <a href="https://github.com/OpenAstroTech/OpenAstroFirmware"><strong>Explore the docs »</strong></a>
     <br />
