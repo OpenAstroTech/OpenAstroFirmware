@@ -206,5 +206,5 @@ Project Link: [https://github.com/OpenAstroTech/OpenAstroFirmware](https://githu
 [issues-shield]: https://img.shields.io/github/issuesOpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
 [issues-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/issues
 [license-shield]: https://img.shields.io/github/license/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
-[license-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/blob/master/LICENSE.txt
+[license-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/blob/master/LICENSE
 [product-screenshot]: images/screenshot.png
