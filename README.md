@@ -1,4 +1,9 @@
-<div id="top"></div>
+<div id="top">
+  <p>
+  <h2>This project is work in progress and is not for use or testing yet! Really, you don't want to use it at the moment!</h2>
+  </p>
+  <br />
+</div>
 
 <!-- PROJECT SHIELDS -->
 <!--
@@ -18,24 +23,13 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/OpenAstroTech/OpenAstroFirmware">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
-
-<h3 align="center">OpenAstroFirmware</h3>
-
-  <p align="center">
-    Official Firmware for DIY astronomical telescope mounts. This firmware is the 2.x successor of the <a href="https://github.com/OpenAstroTech/OpenAstroTracker-Firmware">OpenAstroTracker-Firmware</a>.
-    <br />
-    <a href="https://github.com/OpenAstroTech/OpenAstroFirmware"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/OpenAstroTech/OpenAstroFirmware">View Demo</a>
-    ·
-    <a href="https://github.com/OpenAstroTech/OpenAstroFirmware/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/OpenAstroTech/OpenAstroFirmware/issues">Request Feature</a>
-  </p>
+   <a href="https://github.com/OpenAstroTech/OpenAstroFirmware">
+   <img src="images/logo.png" alt="Logo" width="80" height="80">
+   </a>
+   <h3 align="center">OpenAstroFirmware</h3>
+   <p align="center">
+      Official Firmware for DIY astronomical telescope mounts. This firmware is the 2.x successor of the <a href="https://github.com/OpenAstroTech/OpenAstroTracker-Firmware">OpenAstroTracker-Firmware</a>.
+   </p>
 </div>
 
 
