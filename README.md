@@ -47,8 +47,11 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
+        <li><a href="#supported-hardware">Supported hardware</a></li>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#build">Build</a></li>
+        <li><a href="#upload">Upload</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -56,7 +59,6 @@
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
@@ -65,9 +67,25 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+It was a very long and educational time developing, testing and improving [OpenAstroTracker-Firmware](https://github.com/OpenAstroTech/OpenAstroTracker-Firmware) for all of us. It evolved and grew over time as did our hardware support. Amount and type of supported mounts, components, addons and software tools keep increasing. This is why dev team decided to go one step back and redesign the firmware based on the experience with v1 and community feedback and requests. This firmware aims to bring following improvements over time compared to OpenAstroTracker-Firmware:
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email`, `email_client`, `project_title`, `project_description`
+### Usage
+* Easier configuration, flashing and updates
+* Improved stability
+* Improved/Automated calibration
+* New types of addons (these could be among other things Touch display, Mobile app etc.)
+* Ability to track "custom" objects (e.g. Sun, Moon, ISS, Comets etc.)
+* Support for more types of mounts (OAT, OAM, any further Mounts and their versions designed by OpenAstroTech and retrofitted 3rd party mounts)
+* Several new QoL features
+
+### Development
+* Easier maintenability and extendability
+* Automated testing
+* Support for modern 32-bit boards to improve performance, accuracy and reduce the need for hardcore optimizations.
+* In hardware debugging
+* Higher code quality by following best practices and a predefined architecture design
+* Ability to test and run main code and test directly on the host pc to simplify issue analysis
+* Support and usage of modern c++ features to improve readability and clarity of the code
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -87,29 +105,25 @@ Here's a blank template to get started: To avoid retyping too much info. Do a se
 This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
+### Supported hardware
+
+*TBD*
+
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
+*TBD*
 
-### Installation
+### Configuration
 
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-   ```sh
-   git clone https://github.com/OpenAstroTech/OpenAstroFirmware.git
-   ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
+*TBD*
+
+### Build
+
+*TBD*
+
+### Upload
+
+*TBD*
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -118,9 +132,7 @@ This is an example of how to list things you need to use the software and how to
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
+*TBD*
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -129,10 +141,10 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
+- [ ] Build environment setup
+    - [ ] *TBD*
+- [ ] MVP
+    - [ ] *TBD*
 
 See the [open issues](https://github.com/OpenAstroTech/OpenAstroFirmware/issues) for a full list of proposed features (and known issues).
 
@@ -170,20 +182,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
-
 Project Link: [https://github.com/OpenAstroTech/OpenAstroFirmware](https://github.com/OpenAstroTech/OpenAstroFirmware)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* []()
-* []()
-* []()
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -201,4 +200,3 @@ Project Link: [https://github.com/OpenAstroTech/OpenAstroFirmware](https://githu
 [issues-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/issues
 [license-shield]: https://img.shields.io/github/license/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
 [license-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/blob/master/LICENSE
-[product-screenshot]: images/screenshot.png
