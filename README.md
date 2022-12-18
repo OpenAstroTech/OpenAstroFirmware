@@ -196,7 +196,7 @@ Project Link: [https://github.com/OpenAstroTech/OpenAstroFirmware](https://githu
 [forks-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/network/members
 [stars-shield]: https://img.shields.io/github/stars/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
 [stars-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/stargazers
-[issues-shield]: https://img.shields.io/github/issuesOpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
 [issues-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/issues
 [license-shield]: https://img.shields.io/github/license/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
 [license-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/blob/master/LICENSE
