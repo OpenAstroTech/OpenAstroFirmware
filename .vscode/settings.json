@@ -1,0 +1,19 @@
+{
+    "terminal.integrated.defaultProfile.linux": "Zephyr IDE Terminal",
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/.vscode/compile_commands.json",
+    "cmake.configureOnOpen": false,
+    "zephyr-ide.use-zephyr-ide-json": true,
+    "zephyr-ide.projects": null,
+    "files.associations": {
+        "gpio.h": "c"
+    },
+    // "git.ignoredRepositories": [
+    //     "${workspaceFolder}/external"
+    // ],
+    "devicetree.zephyr": "${workspaceFolder}/external/zephyr",
+    "kconfig.zephyr.base": "${workspaceFolder}/external/zephyr",
+    "files.readonlyFromPermissions": true,
+    "files.readonlyInclude": {
+        "external/**/*": true
+    }
+}

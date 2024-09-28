@@ -1,0 +1,37 @@
+{
+  "projects": {
+    "firmware": {
+      "rel_path": "firmware",
+      "name": "firmware",
+      "buildConfigs": {
+        "build/nucleo_f446re": {
+          "relBoardDir": "external/zephyr/boards",
+          "board": "nucleo_f446re",
+          "relBoardSubDir": "external/zephyr/boards/st/nucleo_f446re",
+          "name": "build/nucleo_f446re",
+          "westBuildArgs": "",
+          "westBuildCMakeArgs": " -DCONFIG_DEBUG_OPTIMIZATIONS=y -DCONFIG_DEBUG_THREAD_INFO=y ",
+          "confFiles": {
+            "config": [],
+            "extraConfig": [],
+            "overlay": [],
+            "extraOverlay": []
+          },
+          "runnerConfigs": {
+            "openocd": {
+              "runner": "openocd",
+              "name": "openocd",
+              "args": ""
+            }
+          }
+        }
+      },
+      "confFiles": {
+        "config": [],
+        "extraConfig": [],
+        "overlay": [],
+        "extraOverlay": []
+      }
+    }
+  }
+}

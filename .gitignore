@@ -1,0 +1,5 @@
+# Ignore the virtual environment
+.venv
+
+# Ignore external resources initialized by west
+external
