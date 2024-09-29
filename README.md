@@ -93,7 +93,7 @@ It was a very long and educational time developing, testing and improving [OpenA
 
 ### Built With
 
-* [PlatformIO](https://platformio.org/)
+* [Zephyr]([https://platformio.org/](https://docs.zephyrproject.org/3.7.0/))
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
