@@ -4,9 +4,6 @@
     "cmake.configureOnOpen": false,
     "zephyr-ide.use-zephyr-ide-json": true,
     "zephyr-ide.projects": null,
-    "files.associations": {
-        "gpio.h": "c"
-    },
     // "git.ignoredRepositories": [
     //     "${workspaceFolder}/external"
     // ],

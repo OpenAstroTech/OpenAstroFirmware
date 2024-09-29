@@ -3,17 +3,16 @@
     "configurations": [
         {
             "name": "Zephyr IDE: Debug",
-            "type": "cortex-debug",
             "cwd": "${workspaceFolder}",
             "gdbPath": "${command:zephyr-ide.get-gdb-path}",
             "executable": "${command:zephyr-ide.get-active-build-path}/zephyr/zephyr.elf",
             "request": "launch",
+            "type": "cortex-debug",
             "servertype": "openocd",
-            "showDevDebugOutput": "raw",
             "interface": "swd",
             "configFiles": [
-                "${workspaceFolder}/external/zephyr/boards/st/nucleo_f446re/support/openocd.cfg"
-            ],
-        }
+                "${command:zephyr-ide.get-active-build-board-path}/support/openocd.cfg"
+            ]
+        },
     ]
 }
