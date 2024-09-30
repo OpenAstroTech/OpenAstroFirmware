@@ -1,0 +1,4 @@
+tests:
+  example.framework_tests:
+    platform_allow: native_posix
+    tags: example_tests

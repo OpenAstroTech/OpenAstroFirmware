@@ -2,6 +2,7 @@
     "terminal.integrated.defaultProfile.linux": "Zephyr IDE Terminal",
     "C_Cpp.default.compileCommands": "${workspaceFolder}/.vscode/compile_commands.json",
     "cmake.configureOnOpen": false,
+    "cmake.copyCompileCommands": "${workspaceFolder}/.vscode/compile_commands.json",
     "zephyr-ide.use-zephyr-ide-json": true,
     "zephyr-ide.projects": null,
     // "git.ignoredRepositories": [
@@ -12,5 +13,10 @@
     "files.readonlyFromPermissions": true,
     "files.readonlyInclude": {
         "external/**/*": true
+    },
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/*/**": true
     }
 }
