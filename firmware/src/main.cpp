@@ -12,7 +12,7 @@
 #include <zephyr/sys/printk.h>
 #include <inttypes.h>
 
-#include <lx200.h>
+#include <lx200.hpp>
 
 #define SLEEP_TIME_MS 1
 
@@ -37,14 +37,10 @@ void lx200_initialize()
 	printk("Initializing LX200\n");
 }
 
-lx200_command_handler_t lx200_command_handler = {
-	.lx200_initialize = lx200_initialize,
-};
-
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
 					uint32_t pins)
 {
-	lx200_parse_command(":g+#", 4, &lx200_command_handler);
+	auto parser = MeadeLX200CommandParser();
 	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
 }
 

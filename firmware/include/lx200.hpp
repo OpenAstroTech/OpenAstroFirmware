@@ -151,18 +151,22 @@
 // :SCMM/DD/YY# Change Handbox Date to MM/DD/YY
 // :SdsDD*MM# Set target object declination to sDD*MM
 
-// meade lx200 command handler
-typedef struct
+class MeadeLX200CommandParser
 {
-    /**
-     * @brief LX200 GPS Only - Causes the telescope to cease current operations and restart at its power on initialization.
-     */
-    void (*lx200_initialize)();
-} lx200_command_handler_t;
+private:
+    /* data */
+public:
+    MeadeLX200CommandParser();
+    ~MeadeLX200CommandParser();
+};
 
-/**
- * @brief Parse the command and call the appropriate handler function
- */
-void lx200_parse_command(char *command, int cnt, lx200_command_handler_t *handler);
+MeadeLX200CommandParser::MeadeLX200CommandParser()
+{
+}
+
+MeadeLX200CommandParser::~MeadeLX200CommandParser()
+{
+}
+
 
 #endif

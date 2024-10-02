@@ -3,7 +3,7 @@ menu "LX200 Protocol Library"
 config LX200
     bool "Enable LX200 protocol"
     default y
-    depends on RING_BUFFER
+    depends on RING_BUFFER && STD_CPP20
     help
       Enable support for the LX200 protocol.
 
