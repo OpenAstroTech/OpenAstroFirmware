@@ -1,0 +1,5 @@
+rsource "lib/Kconfig"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu

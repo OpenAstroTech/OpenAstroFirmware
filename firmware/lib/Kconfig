@@ -1,0 +1,5 @@
+menu "Protocols"
+
+rsource "lx200/Kconfig"
+
+endmenu

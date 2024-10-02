@@ -12,6 +12,8 @@
 #include <zephyr/sys/printk.h>
 #include <inttypes.h>
 
+#include <lx200.h>
+
 #define SLEEP_TIME_MS 1
 
 /*
@@ -30,9 +32,19 @@ static struct gpio_callback button_cb_data;
  */
 static struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
+void lx200_initialize()
+{
+	printk("Initializing LX200\n");
+}
+
+lx200_command_handler_t lx200_command_handler = {
+	.lx200_initialize = lx200_initialize,
+};
+
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
 					uint32_t pins)
 {
+	lx200_parse_command(":g+#", 4, &lx200_command_handler);
 	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
 }
 

@@ -3,6 +3,3 @@
 
 # Ignore external resources initialized by west
 external
-
-# ignore test reports
-reports
