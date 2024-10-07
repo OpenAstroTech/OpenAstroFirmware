@@ -1,5 +1,11 @@
+menu "OpenAstroFirmware"
+
+module = FIRMWARE
+module-str = firmware
+source "subsys/logging/Kconfig.template.log_config"
+
 rsource "lib/Kconfig"
 
-menu "Zephyr"
-source "Kconfig.zephyr"
 endmenu
+
+source "Kconfig.zephyr"

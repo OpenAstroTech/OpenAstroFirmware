@@ -1,10 +1,17 @@
-menu "LX200 Protocol Library"
+menu "Meade LX200 Protocol Library"
+
+module = LX200
+module-str = Meade LX200
+module-dep = RING_BUFFER
+module-str = LX200
 
 config LX200
-    bool "Enable LX200 protocol"
+    bool "Enable Meade LX200 protocol"
     default y
-    depends on RING_BUFFER && STD_CPP20
+    select RING_BUFFER
     help
       Enable support for the LX200 protocol.
+
+source "subsys/logging/Kconfig.template.log_config"
 
 endmenu
