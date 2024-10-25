@@ -18,6 +18,10 @@ void Mount::initialize() {
     LOG_INF("Initializing the mount");
 }
 
+void Mount::setTargetDec(int d, int m, int s) {
+    LOG_INF("Setting the target DEC to %d*%d'%d\"", d, m, s);
+}
+
 void Mount::setTargetRa(int h, int m, int s) {
     LOG_INF("Setting the target RA to %d:%d:%d", h, m, s);
 }

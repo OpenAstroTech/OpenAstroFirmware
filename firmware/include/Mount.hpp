@@ -14,6 +14,15 @@ public:
     void initialize();
 
     /**
+     * @brief Set the Target Dec object
+     * 
+     * @param d degrees
+     * @param m minutes
+     * @param s seconds
+     */
+    void setTargetDec(int d, int m, int s);
+
+    /**
      * @brief Set the Target Ra object
      * 
      * @param h hours

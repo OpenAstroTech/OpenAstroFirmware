@@ -71,16 +71,27 @@ namespace lx200
             MatchResult match(string str) override
             {
                 size_t size = 0;
-                while (size < str.length() && isdigit(str[size]) && (digits == 0 || size < digits))
+                size_t sign = 0;
+                while ((size + sign) < str.length() && (digits == 0 || size < digits))
                 {
-                    size++;
+                    if (size == 0 && sign == 0 && (str[size] == '+' || str[size] == '-'))
+                    {
+                        sign++;
+                    }
+                    else if (isdigit(str[size + sign]))
+                    {
+                        size++;
+                    } else {
+                        break;
+                    }
                 }
 
                 if (size > 0 && (digits == 0 || size == digits))
                 {
-                    return MatchResult{size, str.substr(0, size)};
+                    return MatchResult{size + sign, str.substr(0, size + sign)};
                 }
 
+                LOG_WRN("Failed to match int token in \"%s\"", str.data());
                 return MatchResult{0, nullopt};
             }
         };
@@ -165,19 +176,27 @@ namespace lx200
 
         switch (command[1])
         {
-        case 'I':
+        case 'I': // :I#
             COMMAND(str(":I#"), {
                 mount.initialize();
             });
-            break;
+            return;
         case 'S':
-            COMMAND(str(":Sr") + num(2) + str(":") + num(2) + str(":") + num(2) + str("#"), {
-                mount.setTargetRa(stoi(args[0]), stoi(args[1]), stoi(args[2]));
-            });
-            break;
-        default:
-            LOG_WRN("Unknown command: %s", command.data());
-            break;
+            switch (command[2])
+            {
+            case 'd': // :SdsDD*MM:SS#
+                COMMAND(str(":Sd") + num(2) + str("*") + num(2) + str(":") + num(2) + str("#"), {
+                    mount.setTargetDec(stoi(args[0]), stoi(args[1]), stoi(args[2]));
+                });
+                return;
+            case 'r': // :SrHH:MM:SS#
+                COMMAND(str(":Sr") + num(2) + str(":") + num(2) + str(":") + num(2) + str("#"), {
+                    mount.setTargetRa(stoi(args[0]), stoi(args[1]), stoi(args[2]));
+                });
+                return;
+            }
         }
+
+        LOG_WRN("Unknown command: %s", command.data());
     }
 } // namespace lx200
