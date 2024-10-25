@@ -1,4 +1,4 @@
-#include "Button.hpp"
+#include <device/button/Button.hpp>
 
 #include <zephyr/logging/log.h>
 
@@ -42,7 +42,7 @@ Button::Button(const gpio_dt_spec *dev, button_callback_t onPressed) : dev(dev),
         return;
     }
 
-    LOG_INF("Set up button at %s pin %d\n", dev->port->name, dev->pin);
+    LOG_INF("Set up button at %s pin %d", dev->port->name, dev->pin);
 }
 
 Button::~Button()

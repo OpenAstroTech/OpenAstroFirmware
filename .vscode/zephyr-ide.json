@@ -26,11 +26,11 @@
           },
           "buildDebugTarget": "Zephyr IDE: Debug"
         },
-        "build/nucleo_g070rb": {
+        "build/native_sim/native": {
           "relBoardDir": "external/zephyr/boards",
-          "board": "nucleo_g070rb",
-          "relBoardSubDir": "external/zephyr/boards/st/nucleo_g070rb",
-          "name": "build/nucleo_g070rb",
+          "board": "native_sim/native",
+          "relBoardSubDir": "external/zephyr/boards/native/native_sim",
+          "name": "build/native_sim/native",
           "westBuildArgs": "",
           "westBuildCMakeArgs": " -DCONFIG_DEBUG_OPTIMIZATIONS=y -DCONFIG_DEBUG_THREAD_INFO=y ",
           "confFiles": {
@@ -41,8 +41,8 @@
           },
           "runnerConfigs": {
             "default": {
-              "runner": "openocd",
-              "name": "openocd",
+              "runner": "default",
+              "name": "default",
               "args": ""
             }
           }

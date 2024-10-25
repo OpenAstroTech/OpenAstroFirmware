@@ -6,6 +6,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 rsource "lib/Kconfig"
 
+rsource "src/processor/lx200/Kconfig"
+
 endmenu
 
 source "Kconfig.zephyr"

@@ -1,11 +1,11 @@
-#include "UART.hpp"
+#include <device/uart/UART.hpp>
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(UART, CONFIG_FIRMWARE_LOG_LEVEL);
 
-UART::UART(const struct device* uart_dev) : uart_dev(uart_dev) {}
+UART::UART(const struct device* uart_dev, const uart_callback_t callback) : uart_dev(uart_dev), callback(callback) {}
 
 UART::~UART() {}
 

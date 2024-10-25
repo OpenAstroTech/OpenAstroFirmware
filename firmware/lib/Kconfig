@@ -1,5 +1,5 @@
-menu "Protocols"
+# menu "Protocols"
 
-rsource "lx200/Kconfig"
+# rsource "protocol-library-dir/Kconfig"
 
-endmenu
+# endmenu

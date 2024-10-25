@@ -2,12 +2,13 @@
 #define UART_HPP
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
 
 #include <string>
 
 class UART {
 public:
-    UART(const struct device* uart_dev);
+    UART(const struct device* uart_dev, const uart_callback_t callback);
     ~UART();
 
     void send(std::string data);
@@ -15,6 +16,7 @@ public:
 
 private:
     const struct device* uart_dev;
+    const uart_callback_t callback;
 };
 
 #endif // UART_HPP

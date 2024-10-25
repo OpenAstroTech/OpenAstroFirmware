@@ -1,4 +1,4 @@
-#include "Mount.hpp"
+#include <Mount.hpp>
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -14,16 +14,10 @@ Mount::~Mount() {
 }
 
 void Mount::initialize() {
+
     LOG_INF("Initializing the mount");
-    // Initialization code
 }
 
-void Mount::moveTo(double ra, double dec) {
-    LOG_INF("Moving to RA: %f, DEC: %f", ra, dec);
-    // Code to move the mount to the specified RA and DEC
-}
-
-void Mount::stop() {
-    LOG_INF("Stopping the mount");
-    // Code to stop the mount
+void Mount::setTargetRa(int h, int m, int s) {
+    LOG_INF("Setting the target RA to %d:%d:%d", h, m, s);
 }

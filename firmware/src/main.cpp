@@ -5,37 +5,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
-#include <inttypes.h>
-
-#include "SerialController.hpp"
-#include "Mount.hpp"
-
-#include "device/button/Button.hpp"
-#include "device/uart/UART.hpp"
-
 #include <zephyr/drivers/uart.h>
-
-#define SLEEP_TIME_MS 10
-
 #include <zephyr/logging/log.h>
+
+#include "HardwareConfiguration.hpp"
+#include <Mount.hpp>
+#include "processor/lx200/Processor.hpp"
+
+#include <device/button/Button.hpp>
+
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
-
-#include <MeadeLX200Parser.hpp>
-
-/*
- * Get button configuration from the devicetree sw0 alias. This is mandatory.
- */
-#define SW0_NODE DT_ALIAS(sw0)
-#if !DT_NODE_HAS_STATUS(SW0_NODE, okay)
-#error "Unsupported board: sw0 devicetree alias is not defined"
-#endif
-static const struct gpio_dt_spec button_spec = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
-
-static const struct device *uart_dev = DEVICE_DT_GET(DT_ALIAS(uart2));
 
 void button_pressed()
 {
@@ -48,43 +33,39 @@ int main(void)
 	LOG_INF("Board: %s", CONFIG_BOARD);
 	LOG_INF("MCU Frequency: %u Hz", sys_clock_hw_cycles_per_sec());
 
-	struct uart_config uart_cfg;
-	int ret = uart_config_get(uart_dev, &uart_cfg);
-	if (ret)
-	{
-		LOG_ERR("Failed to get console UART configuration");
-		return -1;
-	}
-
-	LOG_INF("Console UART Baud Rate: %d", uart_cfg.baudrate);
-
-	if (!device_is_ready(uart_dev))
+	if (!device_is_ready(dt::uart_control_dev))
 	{
 		LOG_ERR("Console UART device not ready\n");
 		return ENODEV;
 	}
 
-	ret = uart_config_get(uart_dev, &uart_cfg);
-	if (ret)
+	struct uart_config uart_cfg;
+	if (uart_config_get(dt::uart_control_dev, &uart_cfg))
 	{
 		LOG_ERR("Failed to get control UART configuration");
-		return -1;
+		// return ENODEV;
+	} else {
+		LOG_INF("Control UART Baud Rate: %d", uart_cfg.baudrate);
 	}
 
-	LOG_INF("Control UART Baud Rate: %d", uart_cfg.baudrate);
-
-	MeadeLX200Parser meade;
-	meade.processCommand(":I#");
-	meade.processCommand(":G#");
-
 	Mount mount;
-	mount.stop();
 
-	Button button(&button_spec, button_pressed);
+	lx200::Processor processor(dt::uart_control_dev, mount);
 
+	// lx200_uart_init(dt::uart_control_dev);
+	// lx200_uart_enable(dt::uart_control_dev);
+
+#if SW0_BUTTON
+	Button button(&dt::sw0_button_spec, button_pressed);
+#endif
+	
 	while (1)
 	{
-		k_msleep(SLEEP_TIME_MS);
+#if defined(CONFIG_ARCH_POSIX)
+	k_cpu_idle();
+#else
+	k_sleep(K_MSEC(10));
+#endif
 	}
 
 	return 0;

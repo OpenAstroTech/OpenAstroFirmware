@@ -1,0 +1,7 @@
+menu "LX200"
+
+module = LX200
+module-str = lx200
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
