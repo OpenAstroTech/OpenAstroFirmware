@@ -14,17 +14,37 @@ namespace lx200
 
     namespace tokenizer
     {
+        /**
+         * @brief The result of a token match operation.
+         */
         struct MatchResult
         {
+            /**
+             * @brief The number of characters matched.
+             */
             size_t match_size;
+
+            /**
+             * @brief The matched argument string value. nullopt if no argument was matched.
+             */
             optional<string> arg;
 
+            static const MatchResult NO_MATCH;
+            
+            /**
+             * @brief MatchResult evaluates to true if the match_size is greater than zero.
+             */
             explicit operator bool() const
             {
                 return match_size > 0;
             }
         };
 
+        const MatchResult MatchResult::NO_MATCH = {0, nullopt};
+
+        /**
+         * @brief A token or separator in the command string.
+         */
         struct Token
         {
             unique_ptr<Token> next;
@@ -34,27 +54,29 @@ namespace lx200
             virtual MatchResult match(string str) = 0;
         };
 
-        struct SeparatorToken : public Token
+        /**
+         * @brief A static token that matches a string. It does not return any argument.
+         */
+        struct StaticStringToken : public Token
         {
-            string value;
+            const string value;
 
-            SeparatorToken(const string &val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
-            SeparatorToken(const char *val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
+            StaticStringToken(const string &val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
+            StaticStringToken(const char *val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
 
-            SeparatorToken(const SeparatorToken &other) = default;
-            ~SeparatorToken() = default;
+            StaticStringToken(const StaticStringToken &other) = default;
+            ~StaticStringToken() = default;
 
             MatchResult match(string str) override
             {
                 if (str.find(value) == 0)
                 {
-                    // return nullopt argument because a string token is just a separator for now
-                    // LOG_INF("Matched string token: %s", value.c_str());
+                    // Matched the token. Return the length of the token and no argument.
                     return MatchResult{value.length(), nullopt};
                 }
 
-                LOG_WRN("Failed to match string token \"%s\" in \"%s\"", value.data(), str.data());
-                return MatchResult{0, nullopt};
+                LOG_WRN("Failed to match static string \"%s\" in \"%s\"", value.c_str(), str.c_str());
+                return MatchResult::NO_MATCH;
             }
         };
 
@@ -82,7 +104,9 @@ namespace lx200
                     else if (isdigit(str[size + sign]))
                     {
                         size++;
-                    } else {
+                    }
+                    else
+                    {
                         break;
                     }
                 }
@@ -93,13 +117,13 @@ namespace lx200
                 }
 
                 LOG_WRN("Failed to match int token in \"%s\"", str.data());
-                return MatchResult{0, nullopt};
+                return MatchResult::NO_MATCH;
             }
         };
 
         unique_ptr<Token> str(const char *val)
         {
-            return make_unique<SeparatorToken>(val);
+            return make_unique<StaticStringToken>(val);
         }
 
         unique_ptr<Token> num(const int size = 0)
@@ -166,12 +190,14 @@ namespace lx200
         return move(lhs);
     }
 
-    unique_ptr<tokenizer::Token> operator+(const std::string &lhs, unique_ptr<tokenizer::Token> rhs) {
-        return make_unique<tokenizer::SeparatorToken>(lhs) + move(rhs);
+    unique_ptr<tokenizer::Token> operator+(const std::string &lhs, unique_ptr<tokenizer::Token> rhs)
+    {
+        return make_unique<tokenizer::StaticStringToken>(lhs) + move(rhs);
     }
 
-    unique_ptr<tokenizer::Token> operator+(unique_ptr<tokenizer::Token> lhs, const std::string &rhs) {
-        return move(lhs) + make_unique<tokenizer::SeparatorToken>(rhs);
+    unique_ptr<tokenizer::Token> operator+(unique_ptr<tokenizer::Token> lhs, const std::string &rhs)
+    {
+        return move(lhs) + make_unique<tokenizer::StaticStringToken>(rhs);
     }
 
     void CommandParser::parse(string &command)
