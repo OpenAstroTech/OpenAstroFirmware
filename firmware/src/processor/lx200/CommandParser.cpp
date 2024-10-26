@@ -34,14 +34,15 @@ namespace lx200
             virtual MatchResult match(string str) = 0;
         };
 
-        struct StringToken : public Token
+        struct SeparatorToken : public Token
         {
             string value;
 
-            StringToken(const char *val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
+            SeparatorToken(const string &val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
+            SeparatorToken(const char *val, unique_ptr<Token> next = nullptr) : Token(move(next)), value(val) {}
 
-            StringToken(const StringToken &other) = default;
-            ~StringToken() = default;
+            SeparatorToken(const SeparatorToken &other) = default;
+            ~SeparatorToken() = default;
 
             MatchResult match(string str) override
             {
@@ -98,7 +99,7 @@ namespace lx200
 
         unique_ptr<Token> str(const char *val)
         {
-            return make_unique<StringToken>(val);
+            return make_unique<SeparatorToken>(val);
         }
 
         unique_ptr<Token> num(const int size = 0)
@@ -165,6 +166,14 @@ namespace lx200
         return move(lhs);
     }
 
+    unique_ptr<tokenizer::Token> operator+(const std::string &lhs, unique_ptr<tokenizer::Token> rhs) {
+        return make_unique<tokenizer::SeparatorToken>(lhs) + move(rhs);
+    }
+
+    unique_ptr<tokenizer::Token> operator+(unique_ptr<tokenizer::Token> lhs, const std::string &rhs) {
+        return move(lhs) + make_unique<tokenizer::SeparatorToken>(rhs);
+    }
+
     void CommandParser::parse(string &command)
     {
 #define COMMAND(tokens, func) \
@@ -181,16 +190,16 @@ namespace lx200
                 mount.initialize();
             });
             return;
-        case 'S':
+        case 'S': // Set family
             switch (command[2])
             {
             case 'd': // :SdsDD*MM:SS#
-                COMMAND(str(":Sd") + num(2) + str("*") + num(2) + str(":") + num(2) + str("#"), {
+                COMMAND(":Sd" + num(2) + "*" + num(2) + ":" + num(2) + "#", {
                     mount.setTargetDec(stoi(args[0]), stoi(args[1]), stoi(args[2]));
                 });
                 return;
             case 'r': // :SrHH:MM:SS#
-                COMMAND(str(":Sr") + num(2) + str(":") + num(2) + str(":") + num(2) + str("#"), {
+                COMMAND(":Sr" + num(2) + ":" + num(2) + ":" + num(2) + "#", {
                     mount.setTargetRa(stoi(args[0]), stoi(args[1]), stoi(args[2]));
                 });
                 return;
