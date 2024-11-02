@@ -20,7 +20,7 @@ zephyr_include_directories(include)
 include(CMakePrintHelpers)
 cmake_print_variables(PROJECT_SOURCE_DIR)
 
-file(GLOB_RECURSE APP_SOURCES "src/*.cpp")
+file(GLOB_RECURSE APP_SOURCES "src/*.cpp" "src/*.c")
 target_sources(app PRIVATE ${APP_SOURCES})
 
 # target_sources(app PRIVATE 

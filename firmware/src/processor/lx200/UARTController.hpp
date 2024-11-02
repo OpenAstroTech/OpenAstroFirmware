@@ -1,9 +1,9 @@
 #pragma once
 
-#include <device/uart/UART.hpp>
-#include <zephyr/sys/ring_buffer.h>
-
 #include "CommandParser.hpp"
+
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #define LX200_THREAD_STACK_SIZE 2024
 #define LX200_THREAD_PRIORITY 10

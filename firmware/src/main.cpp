@@ -7,18 +7,19 @@
 
 #include <inttypes.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/usb/usb_device.h>
 
 #include "HardwareConfiguration.hpp"
-#include <Mount.hpp>
 #include "processor/lx200/Processor.hpp"
 
+#include <Mount.hpp>
 #include <device/button/Button.hpp>
+#include <zephyr/drivers/uart.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
 
@@ -33,6 +34,12 @@ int main(void)
 	LOG_INF("Board: %s", CONFIG_BOARD);
 	LOG_INF("MCU Frequency: %u Hz", sys_clock_hw_cycles_per_sec());
 
+	int ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return 0;
+	}
+
 	if (!device_is_ready(dt::uart_control_dev))
 	{
 		LOG_ERR("Console UART device not ready\n");
@@ -43,8 +50,9 @@ int main(void)
 	if (uart_config_get(dt::uart_control_dev, &uart_cfg))
 	{
 		LOG_ERR("Failed to get control UART configuration");
-		// return ENODEV;
-	} else {
+	}
+	else
+	{
 		LOG_INF("Control UART Baud Rate: %d", uart_cfg.baudrate);
 	}
 
@@ -52,19 +60,16 @@ int main(void)
 
 	lx200::Processor processor(dt::uart_control_dev, mount);
 
-	// lx200_uart_init(dt::uart_control_dev);
-	// lx200_uart_enable(dt::uart_control_dev);
-
 #if SW0_BUTTON
 	Button button(&dt::sw0_button_spec, button_pressed);
 #endif
-	
+
 	while (1)
 	{
 #if defined(CONFIG_ARCH_POSIX)
-	k_cpu_idle();
+		k_cpu_idle();
 #else
-	k_sleep(K_MSEC(10));
+		k_sleep(K_MSEC(1000));
 #endif
 	}
 

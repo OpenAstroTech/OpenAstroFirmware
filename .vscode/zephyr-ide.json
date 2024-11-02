@@ -46,6 +46,27 @@
               "args": ""
             }
           }
+        },
+        "build/robin_nano": {
+          "relBoardDir": "boards",
+          "board": "robin_nano",
+          "relBoardSubDir": "boards/mks/robin_nano",
+          "name": "build/robin_nano",
+          "westBuildArgs": "",
+          "westBuildCMakeArgs": " -DCONFIG_DEBUG_OPTIMIZATIONS=y -DCONFIG_DEBUG_THREAD_INFO=y ",
+          "confFiles": {
+            "config": [],
+            "extraConfig": [],
+            "overlay": [],
+            "extraOverlay": []
+          },
+          "runnerConfigs": {
+            "openocd": {
+              "runner": "openocd",
+              "name": "openocd",
+              "args": ""
+            }
+          }
         }
       },
       "confFiles": {

@@ -1,0 +1,5 @@
+board:
+  name: robin_nano
+  vendor: mks
+  socs:
+    - name: stm32f407xx

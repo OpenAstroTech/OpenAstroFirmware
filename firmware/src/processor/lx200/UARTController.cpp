@@ -4,6 +4,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/ring_buffer.h>
+
 
 #include <zephyr/timing/timing.h>
 
@@ -34,9 +37,15 @@ namespace lx200
         k_thread_name_set(&uart_thread_data, "LX200_UART");
 
         // Set the callback function for the UART interrupt
-        uart_irq_callback_user_data_set(uart_dev, uart_callback, this);
+        LOG_INF("Setting UART callback");
+        int ret = uart_irq_callback_user_data_set(uart_dev, uart_callback, this);
+        if (ret)
+        {
+            LOG_ERR("Failed to set UART callback. code=%d", ret);
+        }
 
         // Enable the RX interrupt
+        LOG_INF("Enabling UART RX interrupt");
         uart_irq_rx_enable(uart_dev);
     }
 
@@ -56,41 +65,39 @@ namespace lx200
 
         // Check if the UART device is ready to process data
         // It has to be called at the beginning of the ISR to update the internal state
-        if (uart_irq_update(dev) != 1)
+        while (uart_irq_update(dev) && uart_irq_is_pending(dev))
         {
-            LOG_WRN("Failed to start processing rx data");
-            return;
-        }
+            // Check if data is ready to be read
+            int ret = uart_irq_rx_ready(dev);
+            if (ret == 0)
+            {
+                // character is not ready to be read. Exit the loop
+                continue;
+            }
+            else if (ret < 0)
+            {
+                LOG_WRN("Failed to check if data is ready to be read");
+                continue;
+            }
 
-        // Check if data is ready to be read
-        int ret = uart_irq_rx_ready(dev);
-        if (ret == 0)
-        {
-            // character is not ready to be read. Exit the loop
-            return;
-        }
-        else if (ret < 0)
-        {
-            LOG_WRN("Failed to check if data is ready to be read");
-            return;
-        }
+            uint8_t receivedByte;
+            ret = uart_fifo_read(dev, &receivedByte, 1);
 
-        uint8_t receivedByte;
-        ret = uart_fifo_read(dev, &receivedByte, 1);
+            if (ret < 0)
+            {
+                // no character received. Exit the loop
+                LOG_WRN("No character received. code=%d", ret);
+                continue;
+            }
 
-        if (ret < 0)
-        {
-            // no character received. Exit the loop
-            LOG_WRN("No character received. code=%d", ret);
-            return;
-        }
+            // Add the received byte to the message queue. This will be processed by the UART thread.
+            ret = k_msgq_put(&controller->uart_msgq, &receivedByte, K_NO_WAIT);
 
-        // Add the received byte to the message queue. This will be processed by the UART thread.
-        ret = k_msgq_put(&controller->uart_msgq, &receivedByte, K_NO_WAIT);
-
-        if (ret < 0)
-        {
-            LOG_WRN("Failed to put data in the message queue. code=%d", ret);
+            if (ret < 0)
+            {
+                LOG_WRN("Failed to put data in the message queue. code=%d", ret);
+                continue;
+            }
         }
     }
 

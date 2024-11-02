@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /dts-v1/;
+ #include <st/f4/stm32f407Xg.dtsi>
+ #include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
+
+/ {
+	model = "MKS Robin Nano board";
+	compatible = "mks,robin_nano";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		tf_led: led_0 {
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+			label = "TF Card detection LED";
+		};
+	};
+
+	aliases {
+		led0 = &tf_led;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+// &spi1 {
+// 	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+// 	pinctrl-names = "default";
+// 	status = "okay";
+// 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+// 	w25q16cv: w25q16cv@0 {
+// 		compatible = "jedec,spi-nor";
+// 		reg = <0>;
+// 		spi-max-frequency = <40000000>;
+// 		size = <0x1000000>;
+// 		has-dpd;
+// 		t-enter-dpd = <4000>;
+// 		t-exit-dpd = <25000>;
+// 		jedec-id = [ ef 40 15  ];
+// 	};
+// };
+
+// &spi2 {
+// 	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
+// 	pinctrl-names = "default";
+// 	status = "okay";
+// };
