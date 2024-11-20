@@ -4,6 +4,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/thread.h>
 
 #define LX200_THREAD_STACK_SIZE 2024
 #define LX200_THREAD_PRIORITY 10
@@ -25,7 +26,7 @@ namespace lx200
         struct k_msgq uart_msgq;
         char uart_msgq_buffer[LX200_MSGQ_SIZE];
 
-        K_THREAD_STACK_MEMBER(uart_thread_stack, LX200_THREAD_STACK_SIZE);
+        K_KERNEL_STACK_MEMBER(uart_thread_stack, LX200_THREAD_STACK_SIZE);
         struct k_thread uart_thread_data;
         k_tid_t uart_thread_id;
 
