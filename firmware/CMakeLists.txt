@@ -20,13 +20,6 @@ zephyr_include_directories(include)
 include(CMakePrintHelpers)
 cmake_print_variables(PROJECT_SOURCE_DIR)
 
+# Add the source files to the target
 file(GLOB_RECURSE APP_SOURCES "src/*.cpp" "src/*.c")
 target_sources(app PRIVATE ${APP_SOURCES})
-
-# target_sources(app PRIVATE 
-#     src/main.cpp
-#     src/Mount.cpp
-#     src/device/button/Button.cpp
-#     src/device/uart/UART.cpp
-#     src/processor/lx200/UARTController.cpp
-# )

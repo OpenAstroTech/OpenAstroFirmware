@@ -5,10 +5,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/sys/ring_buffer.h>
-
-
-#include <zephyr/timing/timing.h>
 
 LOG_MODULE_DECLARE(lx200, CONFIG_LX200_LOG_LEVEL);
 
@@ -56,7 +52,8 @@ namespace lx200
     }
 
     /**
-     * @brief Static callback function for the UART interrupt. This function is called by the Zephyr kernel when the UART interrupt is triggered.
+     * @brief Static callback function for the UART interrupt. 
+     *        This function is called by the Zephyr kernel when the UART interrupt is triggered.
      *        This function then calls the non-static callback function.
      */
     void UARTController::uart_callback(const device *dev, void *controller_ptr)

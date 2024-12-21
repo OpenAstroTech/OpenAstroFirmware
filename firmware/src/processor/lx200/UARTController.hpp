@@ -6,7 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/thread.h>
 
-#define LX200_THREAD_STACK_SIZE 2024
+#define LX200_THREAD_STACK_SIZE 2048
 #define LX200_THREAD_PRIORITY 10
 
 #define LX200_MSGQ_SIZE 128

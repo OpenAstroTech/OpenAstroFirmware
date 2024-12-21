@@ -30,7 +30,7 @@ namespace lx200
             optional<string> arg;
 
             static const MatchResult NO_MATCH;
-            
+
             /**
              * @brief MatchResult evaluates to true if the match_size is greater than zero.
              */
@@ -202,10 +202,8 @@ namespace lx200
 
     void CommandParser::parse(string &command)
     {
-#define COMMAND(tokens, func) \
-    tokenizer::parse(tokens, command, [this](vector<string> args) func)
+#define COMMAND(tokens, func) tokenizer::parse(tokens, command, [this](vector<string> args) func)
 
-        // using namespace ctre;
         using namespace std;
         using namespace tokenizer;
 

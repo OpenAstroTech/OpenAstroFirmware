@@ -1,8 +1,7 @@
 / {
     chosen {
-        zephyr,console = &usart3;
+        zephyr,console = &usart3; // we can't use cdc acm as console because it lacks 
         oaf,uart-control = &cdc_acm_uart0;
-        // oaf,uart-control = &usart1;
     };
 };
 

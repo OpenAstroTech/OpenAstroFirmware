@@ -69,6 +69,7 @@ int main(void)
 #if defined(CONFIG_ARCH_POSIX)
 		k_cpu_idle();
 #else
+		LOG_DBG(".");
 		k_sleep(K_MSEC(1000));
 #endif
 	}
