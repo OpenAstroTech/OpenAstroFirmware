@@ -10,7 +10,7 @@
           "relBoardSubDir": "external/zephyr/boards/st/nucleo_f446re",
           "name": "build/nucleo_f446re",
           "westBuildArgs": "",
-          "westBuildCMakeArgs": " -DCONFIG_DEBUG_OPTIMIZATIONS=y -DCONFIG_DEBUG_THREAD_INFO=y ",
+          "westBuildCMakeArgs": " -DCONFIG_DEBUG_OPTIMIZATIONS=y -DCONFIG_DEBUG_THREAD_INFO=y -DCONFIG_COMPILER_SAVE_TEMPS=y",
           "confFiles": {
             "config": [],
             "extraConfig": [],

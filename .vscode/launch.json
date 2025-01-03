@@ -11,7 +11,7 @@
             "servertype": "openocd",
             "interface": "swd",
             "configFiles": [
-                "${command:zephyr-ide.get-active-build-board-path}/support/openocd.cfg"
+                "/home/andre/repos/OpenAstroFirmware/external/zephyr/boards/st/nucleo_f446re/support/openocd.cfg"
             ]
         },
     ]

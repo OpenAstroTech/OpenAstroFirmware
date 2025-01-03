@@ -1,12 +1,12 @@
 manifest:
   remotes:
     - name: zephyrproject
-      url-base: https://github.com/zephyrproject-rtos
+      url-base: https://github.com/andre-stefanov
   projects:
     - name: zephyr
       repo-path: zephyr
       remote: zephyrproject
-      revision: v4.0.0
+      revision: stepper-velocity-float
       clone-depth: 1
       import:
         path-prefix: external

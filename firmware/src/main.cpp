@@ -18,10 +18,15 @@
 #include "processor/lx200/Processor.hpp"
 
 #include <Mount.hpp>
-#include <device/button/Button.hpp>
-#include <zephyr/drivers/uart.h>
+#include <device/gpio/GPIO.hpp>
+
+#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper_trinamic.h>
+#include "../../external/zephyr/include/zephyr/drivers/stepper/stepper_trinamic.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
+
+const struct device *tmc2209 = DEVICE_DT_GET(DT_NODELABEL(tmc2209));
 
 void button_pressed()
 {
@@ -34,11 +39,15 @@ int main(void)
 	LOG_INF("Board: %s", CONFIG_BOARD);
 	LOG_INF("MCU Frequency: %u Hz", sys_clock_hw_cycles_per_sec());
 
-	int ret = usb_enable(NULL);
-	if (ret != 0) {
+	stepper_run(tmc2209, STEPPER_DIRECTION_POSITIVE, 10);
+
+#ifdef CONFIG_USB_DEVICE_STACK
+	if (usb_enable(NULL) != 0)
+	{
 		LOG_ERR("Failed to enable USB");
 		return 0;
 	}
+#endif
 
 	if (!device_is_ready(dt::uart_control_dev))
 	{
@@ -61,15 +70,20 @@ int main(void)
 	lx200::Processor processor(dt::uart_control_dev, mount);
 
 #if SW0_BUTTON
-	Button button(&dt::sw0_button_spec, button_pressed);
+	oaf::device::gpio::Input button(&dt::sw0_button_spec, button_pressed);
 #endif
+
+	int32_t position = 0;
 
 	while (1)
 	{
 #if defined(CONFIG_ARCH_POSIX)
 		k_cpu_idle();
 #else
+		// log heartbeat every second to show system is running
 		LOG_DBG(".");
+		stepper_get_actual_position(tmc2209, &position);
+		LOG_INF("Stepper position: %d", position);
 		k_sleep(K_MSEC(1000));
 #endif
 	}

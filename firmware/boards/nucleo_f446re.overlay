@@ -1,7 +1,19 @@
 / {
     chosen {
-        zephyr,console = &usart1;
+        zephyr,console = &usart2;
         oaf,uart-control = &usart2;
+    };
+
+    tmc2209: tmc2209 {
+        compatible = "adi,tmc2209";
+        en-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+        // msx-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>,
+                       // <&gpioe 2 GPIO_ACTIVE_HIGH>;
+        step-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+        dir-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+        micro-step-res = <32>;
+        counter = <&counter2>;
+        // dual-edge-step;
     };
 };
 
@@ -34,4 +46,13 @@
 &usart2 {
     status = "okay";
     current-speed = <115200>;
+};
+
+&timers2 {
+    status = "okay";
+    st,prescaler = <0>;
+
+    counter2: counter {
+        status = "okay";
+    };
 };

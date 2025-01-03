@@ -12,7 +12,7 @@
     "kconfig.zephyr.base": "${workspaceFolder}/external/zephyr",
     "files.readonlyFromPermissions": true,
     "files.readonlyInclude": {
-        "external/**/*": true
+        // "external/**/*": true
     },
     "files.watcherExclude": {
         "**/.git/objects/**": true,

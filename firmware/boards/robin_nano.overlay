@@ -1,13 +1,20 @@
 / {
     chosen {
-        zephyr,console = &usart3; // we can't use cdc acm as console because it lacks 
+        zephyr,console = &usart3; // we can't use cdc acm as console because it lacks required amount of cdc acm endpoints
         oaf,uart-control = &cdc_acm_uart0;
     };
 };
 
+// Configuration for the CDC ACM UART
 &zephyr_udc0 {
     cdc_acm_uart0: cdc_acm_uart0 {
         compatible = "zephyr,cdc-acm-uart";
-        label = "CDC_ACM_0";
+    };
+};
+
+&timers1 {
+    status = "okay";
+    pwm {
+        status = "okay";
     };
 };
