@@ -20,13 +20,12 @@ runs:
     - name: 'Set up venv'
       shell: bash
       run: |
-        python -m venv .venv
+        python3 -m venv .venv
         source .venv/bin/activate
 
     - name: 'Install west'
       shell: bash
       run: |
-        python -m pip install --upgrade pip
         pip install west
 
     - name: 'Initialize Zephyr workspace'
@@ -38,4 +37,4 @@ runs:
     - name: 'Install Zephyr dependencies'
       shell: bash
       run: |
-        west packages pip --install
+        pip install -r external/zephyr/scripts/requirements.txt
