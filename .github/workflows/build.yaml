@@ -1,0 +1,23 @@
+name: Build Firmware
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v4
+
+    - name: 'Setup'
+      uses: ./.github/actions/setup
+
+    - name: 'Build Firmware'
+      run: |
+        west build -b nucleo_f446re firmware -- -DBOARD_ROOT=.
