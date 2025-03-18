@@ -24,7 +24,7 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
 
-const struct device *stepper = DEVICE_DT_GET(DT_NODELABEL(tmc2209));
+const struct device *stepper = DEVICE_DT_GET(DT_NODELABEL(stepper0));
 
 K_SEM_DEFINE(steps_completed_sem, 0, 1);
 
@@ -33,7 +33,7 @@ void button_pressed()
 	LOG_INF("Button pressed callback");
 	if (k_sem_take(&steps_completed_sem, K_FOREVER) == 0)
 	{
-		if (stepper_set_microstep_interval(stepper, 100000000) != 0)
+		if (stepper_set_microstep_interval(stepper, 1250000) != 0)
 		{
 			LOG_ERR("Failed to set microstep interval");
 			return;
@@ -103,8 +103,10 @@ int main(void)
 	int32_t position = 0;
 
 	stepper_set_event_callback(stepper, stepper_callback, NULL);
+	stepper_set_micro_step_res(stepper, STEPPER_MICRO_STEP_1);
 	stepper_enable(stepper, true);
-	stepper_set_reference_position(stepper, 0);
+	stepper_set_microstep_interval(stepper, 1250000);
+	stepper_move_by(stepper, 1000);
 
 	while (1)
 	{
