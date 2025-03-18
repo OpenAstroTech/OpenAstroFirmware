@@ -74,4 +74,14 @@
         "istream": "cpp",
         "sstream": "cpp"
     },
+    "favorites.resources": [
+        {
+            "filePath": "firmware",
+            "group": "Default"
+        },
+        {
+            "filePath": "external/zephyr",
+            "group": "Default"
+        }
+    ],
 }

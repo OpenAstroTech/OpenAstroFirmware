@@ -21,16 +21,43 @@
 #include <device/gpio/GPIO.hpp>
 
 #include <zephyr/drivers/stepper.h>
-#include <zephyr/drivers/stepper/stepper_trinamic.h>
-#include "../../external/zephyr/include/zephyr/drivers/stepper/stepper_trinamic.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
 
-const struct device *tmc2209 = DEVICE_DT_GET(DT_NODELABEL(tmc2209));
+const struct device *stepper = DEVICE_DT_GET(DT_NODELABEL(stepper0));
+
+K_SEM_DEFINE(steps_completed_sem, 0, 1);
 
 void button_pressed()
 {
 	LOG_INF("Button pressed callback");
+	if (k_sem_take(&steps_completed_sem, K_FOREVER) == 0)
+	{
+		if (stepper_set_microstep_interval(stepper, 1250000) != 0)
+		{
+			LOG_ERR("Failed to set microstep interval");
+			return;
+		}
+
+		if (stepper_move_by(stepper, 1000) != 0)
+		{
+			LOG_ERR("Failed to move stepper");
+			return;
+		}
+	}
+}
+
+void stepper_callback(const struct device *dev, const enum stepper_event event, void *user_data)
+{
+	switch (event)
+	{
+	case STEPPER_EVENT_STEPS_COMPLETED:
+		LOG_INF("Steps completed");
+		k_sem_give(&steps_completed_sem);
+		break;
+	default:
+		break;
+	}
 }
 
 int main(void)
@@ -39,7 +66,7 @@ int main(void)
 	LOG_INF("Board: %s", CONFIG_BOARD);
 	LOG_INF("MCU Frequency: %u Hz", sys_clock_hw_cycles_per_sec());
 
-	stepper_run(tmc2209, STEPPER_DIRECTION_POSITIVE, 10);
+	// stepper_set_microstep_interval(stepper, 500000);
 
 #ifdef CONFIG_USB_DEVICE_STACK
 	if (usb_enable(NULL) != 0)
@@ -75,6 +102,12 @@ int main(void)
 
 	int32_t position = 0;
 
+	stepper_set_event_callback(stepper, stepper_callback, NULL);
+	stepper_set_micro_step_res(stepper, STEPPER_MICRO_STEP_1);
+	stepper_enable(stepper, true);
+	stepper_set_microstep_interval(stepper, 1250000);
+	stepper_move_by(stepper, 1000);
+
 	while (1)
 	{
 #if defined(CONFIG_ARCH_POSIX)
@@ -82,7 +115,8 @@ int main(void)
 #else
 		// log heartbeat every second to show system is running
 		LOG_DBG(".");
-		stepper_get_actual_position(tmc2209, &position);
+		stepper_get_actual_position(stepper, &position);
+
 		LOG_INF("Stepper position: %d", position);
 		k_sleep(K_MSEC(1000));
 #endif

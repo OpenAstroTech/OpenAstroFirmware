@@ -6,3 +6,6 @@ external
 
 # Ignore the build directory
 build
+
+# Ignore test results
+twister-out*
