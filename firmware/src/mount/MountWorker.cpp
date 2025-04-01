@@ -68,19 +68,29 @@ struct MountWork
         delete binding;
     }
 
-    std::optional<Result> submit(k_work_q *work_q)
+    Result submit(k_work_q *work_q)
     {
         // Submit the work to the work queue
         auto submit_res = k_work_submit_to_queue(work_q, &work);
-        if (submit_res == 1)
+
+        if (submit_res != 1)
         {
-            // Work was already submitted
-            return result.get(K_FOREVER);
+            // Work was not submitted
+            LOG_ERR("Failed to submit work. Code: %d", submit_res);
+
+            k_oops();
         }
 
-        LOG_ERR("Failed to submit work. Code: %d", submit_res);
+        auto result_value_opt = result.get(K_FOREVER);
 
-        return std::nullopt;
+        if (!result_value_opt)
+        {
+            // Failed to get the result
+            LOG_ERR("Failed to get result");
+            k_oops();
+        }
+
+        return result_value_opt.value();
     }
 };
 
@@ -102,7 +112,8 @@ MountWorker::~MountWorker() = default;
 
 auto MountWorker::submit(auto &&fn, auto... args) -> decltype(auto)
 {
-    auto work = std::make_unique<MountWork<decltype(std::bind_front(fn, &mount, args...))>>(std::bind_front(fn, &mount, args...));
+    auto binding = std::bind_front(fn, &mount, args...);
+    auto work = std::make_unique<MountWork<decltype(binding)>>(binding);
 
     return work->submit(&work_q);
 }
@@ -114,10 +125,10 @@ void MountWorker::initialize()
 
 bool MountWorker::setTargetDec(int d, unsigned int m, unsigned int s)
 {
-    return submit(&Mount::setTargetDec, d, m, s).value();
+    return submit(&Mount::setTargetDec, d, m, s);
 }
 
 bool MountWorker::setTargetRa(unsigned int h, unsigned int m, unsigned int s)
 {
-    return submit(&Mount::setTargetRa, h, m, s).value();
+    return submit(&Mount::setTargetRa, h, m, s);
 }
