@@ -1,4 +1,4 @@
-#include <Mount.hpp>
+#include <mount/Mount.hpp>
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -18,10 +18,12 @@ void Mount::initialize() {
     LOG_INF("Initializing the mount");
 }
 
-void Mount::setTargetDec(int d, int m, int s) {
+bool Mount::setTargetDec(int d, unsigned int m, unsigned int s) {
     LOG_INF("Setting the target DEC to %d*%d'%d\"", d, m, s);
+    return true;
 }
 
-void Mount::setTargetRa(int h, int m, int s) {
+bool Mount::setTargetRa(unsigned int h, unsigned int m, unsigned int s) {
     LOG_INF("Setting the target RA to %d:%d:%d", h, m, s);
+    return true;
 }

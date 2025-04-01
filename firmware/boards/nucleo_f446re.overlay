@@ -1,6 +1,7 @@
 / {
     chosen {
         zephyr,console = &usart2;
+        zephyr,uart-pipe = &usart2;
         oaf,uart-control = &usart2;
     };
 
