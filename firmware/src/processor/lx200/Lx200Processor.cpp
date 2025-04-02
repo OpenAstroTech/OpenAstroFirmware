@@ -11,6 +11,7 @@ void Lx200Processor::process(char data)
     if (buffer_index == 0 && data != ':')
     {
         // Command does not start with the start character. Skip the character
+        LOG_DBG("Invalid command start character: %c", data);
         return;
     }
 
@@ -50,17 +51,17 @@ void Lx200Processor::resetBuffer()
 
 void Lx200Processor::thread_function(void *processor_ptr, void *arg2, void *arg3)
 {
-    auto processor = static_cast<Lx200Processor *>(processor_ptr);
+    auto self = static_cast<Lx200Processor *>(processor_ptr);
 
     while (true)
     {
         char data = 0;
 
         // Wait for a character to be received. This is a blocking call on this thread.
-        k_msgq_get(processor->msgq, &data, K_FOREVER);
+        k_msgq_get(self->msgq, &data, K_FOREVER);
 
         // Process the received data
-        processor->process(data);
+        self->process(data);
     }
 }
 
