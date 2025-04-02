@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         board:
           - nucleo_f446re
@@ -29,4 +30,4 @@ jobs:
 
     - name: 'Build Firmware'
       run: |
-        west build -b {{ matrix.board }} firmware -- -DBOARD_ROOT=.
+        west build -b ${{ matrix.board }} firmware -- -DBOARD_ROOT=.
