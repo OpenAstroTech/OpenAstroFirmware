@@ -18,58 +18,11 @@
 
 #include <mount/Mount.hpp>
 #include <mount/MountWorker.hpp>
-#include <device/gpio/GPIO.hpp>
-
-#include <zephyr/drivers/stepper.h>
 
 #include "device/uart/InterruptUART.hpp"
 #include "processor/lx200/Lx200Processor.hpp"
 
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
-
-const struct device *stepper = DEVICE_DT_GET(DT_NODELABEL(stepper0));
-
-K_SEM_DEFINE(steps_completed_sem, 0, 1);
-
-void button_pressed()
-{
-	LOG_INF("Button pressed callback");
-	if (k_sem_take(&steps_completed_sem, K_FOREVER) == 0)
-	{
-		if (stepper_set_microstep_interval(stepper, 1250000) != 0)
-		{
-			LOG_ERR("Failed to set microstep interval");
-			return;
-		}
-
-		if (stepper_move_by(stepper, 1000) != 0)
-		{
-			LOG_ERR("Failed to move stepper");
-			return;
-		}
-	}
-}
-
-void stepper_callback(const struct device *dev, const enum stepper_event event, void *user_data)
-{
-	int32_t position = 0;
-	switch (event)
-	{
-	case STEPPER_EVENT_STEPS_COMPLETED:
-		LOG_INF("Steps completed");
-		stepper_get_actual_position(stepper, &position);
-		LOG_INF("Stepper position: %d", position);
-		k_sem_give(&steps_completed_sem);
-		break;
-	default:
-		break;
-	}
-}
-
-// K_THREAD_STACK_DEFINE(mount_work_stack, 1024 * 16);
-
-// struct k_work_q mount_work_q;
-// struct k_work_queue_config mount_work_q_config = {.name = "mount"};
 
 Mount mount;
 MountWorker mount_worker(mount);
@@ -93,15 +46,6 @@ int main(void)
 	LOG_INF("Starting OpenAstroFirmware");
 	LOG_INF("Board: %s", CONFIG_BOARD);
 	LOG_INF("MCU Frequency: %u Hz", sys_clock_hw_cycles_per_sec());
-
-	// k_work_queue_init(&mount_work_q);
-
-	// k_work_queue_start(
-	// 	&mount_work_q,
-	// 	mount_work_stack,
-	// 	K_THREAD_STACK_SIZEOF(mount_work_stack),
-	// 	10,
-	// 	&mount_work_q_config);
 
 #ifdef CONFIG_USB_DEVICE_STACK
 	if (usb_enable(NULL) != 0)
@@ -129,12 +73,6 @@ int main(void)
 
 	devices::uart::InterruptUART isr_uart(dt::uart_control_dev, &uart_msgq);
 	isr_uart.enable();
-
-	// lx200::Processor processor(dt::uart_control_dev, mount);
-
-	// #if SW0_BUTTON
-	// 	oaf::device::gpio::Input button(&dt::sw0_button_spec, button_pressed);
-	// #endif
 
 	while (1)
 	{
