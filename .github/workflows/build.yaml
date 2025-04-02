@@ -26,7 +26,7 @@ jobs:
       uses: zephyrproject-rtos/action-zephyr-setup@v1
       with:
         app-path: application
-        toolchains: arm-zephyr-eabi
+        toolchains: all
 
     - name: 'Build Firmware'
       run: |
