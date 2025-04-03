@@ -1,6 +1,9 @@
 # Ignore the virtual environment
 .venv
 
+# Ignore the .west directory. It is created by the 'west init' command
+.west
+
 # Ignore external resources initialized by west
 external
 

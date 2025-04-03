@@ -72,7 +72,16 @@
         "ctime": "cpp",
         "regex": "cpp",
         "istream": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "iomanip": "cpp",
+        "cstring": "cpp",
+        "map": "cpp",
+        "fstream": "cpp",
+        "iostream": "cpp",
+        "cfenv": "cpp",
+        "version": "cpp",
+        "list": "cpp",
+        "set": "cpp"
     },
     "favorites.resources": [
         {
@@ -84,4 +93,5 @@
             "group": "Default"
         }
     ],
+    "C_Cpp.clang_format_fallbackStyle": "Visual Studio",
 }

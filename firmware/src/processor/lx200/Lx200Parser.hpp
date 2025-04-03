@@ -1,5 +1,4 @@
-#ifndef FIRMWARE_LIB_LX200_H
-#define FIRMWARE_LIB_LX200_H
+#pragma once
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1157,31 +1156,24 @@
 //        nothing
 //
 //------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
-#include <stddef.h>
 #include <string>
-#include <Mount.hpp>
+#include <memory>
 
-namespace lx200
+#include "Lx200CommandHandler.hpp"
+
+class Lx200Parser
 {
-    class CommandParser
-    {
-    private:
-        Mount &mount;
+public:
+    Lx200Parser() {}
 
-    public:
-        CommandParser(Mount &mount) : mount(mount) {}
+    ~Lx200Parser() = default;
 
-        ~CommandParser() = default;
-
-        /**
-         * @brief Process a lx200 command string.
-         *
-         * @param command The command string to process. E.g: ":I#"
-         */
-        void parse(std::string &command);
-    };
-}
-
-#endif
+    /**
+     * @brief Process a lx200 command string.
+     *
+     * @param command The command string to process. E.g: ":I#"
+     */
+    bool parse(std::string &command, Lx200CommandHandler *handler);
+};

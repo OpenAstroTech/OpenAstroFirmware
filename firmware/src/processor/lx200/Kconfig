@@ -1,7 +1,26 @@
-menu "LX200"
+menu "Lx200"
 
 module = LX200
 module-str = lx200
 source "subsys/logging/Kconfig.template.log_config"
+
+config LX200_STACK_SIZE
+    hex "LX200 parser stack size"
+    default 0x4000
+    help
+        The size of the stack used by the LX200 parser. This is
+        a fixed size stack, so it should be large enough to
+        accommodate the maximum depth of the parser.
+        The default value is 0x4000 bytes (16kB).
+
+config LX200_MESSAGE_BUFFER_SIZE
+    hex "LX200 message buffer size"
+    default 0x80
+    help
+        The size of the message buffer used to store currently
+        received messages. This is a fixed size buffer, so it
+        should be large enough to accommodate the maximum
+        message size. The default value is 0x80 bytes (128
+        bytes).
 
 endmenu
