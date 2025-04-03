@@ -234,13 +234,13 @@ namespace tokenizer
     template <typename T2>
     constexpr SequenceMatcher<StaticStringMatcher, T2> operator+(const char *lhs, T2 rhs)
     {
-        return SequenceMatcher<StaticStringMatcher, T2>(std::move(s(lhs)), std::move(rhs));
+        return SequenceMatcher<StaticStringMatcher, T2>(s(lhs), std::move(rhs));
     }
 
     template <typename T1>
     constexpr SequenceMatcher<T1, StaticStringMatcher> operator+(T1 lhs, const char *rhs)
     {
-        return SequenceMatcher<T1, StaticStringMatcher>(std::move(lhs), std::move(s(rhs)));
+        return SequenceMatcher<T1, StaticStringMatcher>(std::move(lhs), s(rhs));
     }
 
     // --- Top-Level Eval Implementation Function (Internal Detail) ---
