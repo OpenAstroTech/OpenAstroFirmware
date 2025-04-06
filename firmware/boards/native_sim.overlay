@@ -1,36 +1,12 @@
 / {
     chosen {
         zephyr,console = &uart0;
-        // zephyr,shell-uart = &usart1;
-        // zephyr,uart-mcumgr = &usart1;
-        // zephyr,bt-mon-uart = &usart1;
-        // zephyr,bt-c2h-uart = &usart1;
-        // zephyr,log-backend-uart = &usart2;
-
-        // zephyr,shell-uart = &usart1;
-        // zephyr,uart-mcumgr = &usart1;
         oaf,uart-control = &uart1;
     };
-
-    // uart {
-    //     status = "okay";
-    //     compatible = "zephyr,native-tty-uart";
-    //     serial-port = "/tmp/tty1_device";
-    //     current-speed = <115200>;
-    // };
 };
 
-&uart0 {
+&uart1 {
     status = "okay";
-    current-speed = <115200>;
+    // current-speed = <115200>;
+    // backend = "pty";
 };
-
-// &uart1 {
-    //     status = "okay";
-    //     current-speed = <115200>;
-// };
-
-// &uart1 {
-    //     status = "okay";
-    //     current-speed = <115200>;
-// };

@@ -20,6 +20,7 @@
 #include <mount/MountWorker.hpp>
 
 #include "device/uart/InterruptUART.hpp"
+#include "device/uart/PollingUART.hpp"
 #include "processor/lx200/Lx200Processor.hpp"
 
 LOG_MODULE_REGISTER(main, CONFIG_FIRMWARE_LOG_LEVEL);
@@ -57,7 +58,7 @@ int main(void)
 
 	if (!device_is_ready(dt::uart_control_dev))
 	{
-		LOG_ERR("Console UART device not ready\n");
+		LOG_ERR("Control UART device not ready\n");
 		return ENODEV;
 	}
 
@@ -74,13 +75,12 @@ int main(void)
 	devices::uart::InterruptUART isr_uart(dt::uart_control_dev, &uart_msgq);
 	isr_uart.enable();
 
+	// devices::uart::PollingUART poll_uart(dt::uart_control_dev, &uart_msgq);
+	// poll_uart.enable();
+
 	while (1)
 	{
-#if defined(CONFIG_ARCH_POSIX)
-		k_cpu_idle();
-#else
 		k_sleep(K_MSEC(1000));
-#endif
 	}
 
 	return 0;

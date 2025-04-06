@@ -28,18 +28,23 @@ namespace devices::uart
      *        This function is called by the Zephyr kernel when the UART interrupt is triggered.
      *        This function then calls the non-static callback function.
      */
-    void InterruptUART::uart_callback(const device *dev, void *controller_ptr)
+    void InterruptUART::uart_callback(const device *dev, void *self_ptr)
     {
+        // Start processing interrupts in ISR.
+        // This function should be called the first thing in the ISR.
+        // Calling uart_irq_rx_ready() is only allowed after this function is called.
         if (!uart_irq_update(dev))
         {
             return;
         }
 
+        // Check if UART RX buffer has a received char.
         if (!uart_irq_rx_ready(dev))
         {
             return;
         }
-        auto controller = static_cast<InterruptUART *>(controller_ptr);
+
+        auto self = static_cast<InterruptUART *>(self_ptr);
 
         // Check if the UART device is ready to process data
         // It has to be called at the beginning of the ISR to update the internal state
@@ -68,7 +73,7 @@ namespace devices::uart
             else
             {
                 // character received. Queue it for processing
-                controller->queue_rx_byte(&receivedByte);
+                self->queue_rx_byte(&receivedByte);
             }
         }
     }

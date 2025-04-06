@@ -22,7 +22,6 @@ namespace devices::uart
     class UART
     {
     private:
-        const device *uart_dev;
         k_msgq *uart_msgq;
 
     public:
@@ -32,8 +31,7 @@ namespace devices::uart
          * @param uart_dev The device structure for the UART hardware.
          * @param uart_msgq The message queue for received data.
          */
-        UART(const device *uart_dev, k_msgq *uart_msgq)
-            : uart_dev(uart_dev), uart_msgq(uart_msgq)
+        UART(k_msgq *uart_msgq) : uart_msgq(uart_msgq)
         {
             // nothing to do
         }
@@ -62,10 +60,10 @@ namespace devices::uart
     protected:
         /**
          * @brief Queues a received byte for processing.
-         * 
+         *
          * This method adds a received byte to the RX queue for later processing.
          * It's typically called from an interrupt service routine when data is available on the UART.
-         * 
+         *
          * @param byte Pointer to the byte received from the UART
          */
         void queue_rx_byte(uint8_t *byte);

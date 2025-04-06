@@ -20,6 +20,6 @@ namespace dt
  */
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(oaf_uart_control), okay)
     static const struct device *uart_control_dev = DEVICE_DT_GET(DT_CHOSEN(oaf_uart_control));
-#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(sw1), okay) */
+#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(oaf_uart_control), okay) */
 
 }
