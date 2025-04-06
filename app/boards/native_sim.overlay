@@ -1,0 +1,12 @@
+/ {
+    chosen {
+        zephyr,console = &uart0;
+        oaf,uart-control = &uart1;
+    };
+};
+
+&uart1 {
+    status = "okay";
+    // current-speed = <115200>;
+    // backend = "pty";
+};

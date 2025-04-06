@@ -1,0 +1,65 @@
+/ {
+    chosen {
+        zephyr,console = &usart2;
+        zephyr,uart-pipe = &usart2;
+        oaf,uart-control = &usart2;
+    };
+
+    stepper0: drv8424 {
+        compatible = "ti,drv8424";
+        status = "okay";
+
+        #address-cells = <1>;
+		#size-cells = <0>;
+		#stepper-motor-cells = <0>;
+
+        dir-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+        step-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+        en-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+        m0-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+        m1-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+        sleep-gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+    
+        counter = <&counter2>;
+    };
+};
+
+&clk_hse {
+    clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&pll {
+    div-m = <4>;
+    mul-n = <180>;
+    div-p = <2>;
+    div-q = <7>;
+    clocks = <&clk_hse>;
+    status = "okay";
+};
+
+&rcc {
+    clocks = <&pll>;
+    clock-frequency = <DT_FREQ_M(180)>;
+    ahb-prescaler = <1>;
+    apb1-prescaler = <4>;
+    apb2-prescaler = <2>;
+};
+
+&usart1 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+&usart2 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+&timers2 {
+    status = "okay";
+    st,prescaler = <0>;
+
+    counter2: counter {
+        status = "okay";
+    };
+};

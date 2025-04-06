@@ -1,0 +1,10 @@
+menu "Mount"
+
+config MOUNT_THREAD_STACK_SIZE
+    hex "Mount stack size"
+    default 0x4000
+    help
+        The size of the stack used by the mount thread.
+        The default value is 0x4000 bytes (16kB).
+
+endmenu
