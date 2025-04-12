@@ -39,6 +39,12 @@
 - Must be able to convert from RA/DEC coordinates to stepper target positions (must use solution with longest safe time)
 - Meade Protocol support for OAT/OAM/OAE
 
+## Menu/Display
+- Support Info-only displays to show mount status
+- Support LCD?
+- Input devices? Buttons, joysticks, touch?
+- List of operations possible from interactive display devices
+
 ## Sensors
 - Support for RA and DEC end switches
 - Support for RA/DEC homing switches
