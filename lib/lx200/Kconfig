@@ -1,0 +1,7 @@
+# Copyright (c) 2025, OpenAstroTech
+# SPDX-License-Identifier: Apache-2.0
+
+config LX200
+	bool "Support for lx200 protocol"
+	help
+	  This option enables support for the lx200 protocol.

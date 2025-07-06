@@ -1,10 +1,8 @@
 #pragma once
 
-#include <zephyr/kernel.h>
+#include <inttypes.h>
 
-#include "IMount.hpp"
-
-class Mount : public IMount
+class Mount
 {
 public:
     Mount();
@@ -13,7 +11,7 @@ public:
     /**
      * @brief Initialize the mount
      */
-    void initialize() override;
+    void initialize();
 
     /**
      * @brief Set the Target Dec
@@ -24,7 +22,7 @@ public:
      * 
      * @return true if successful, false otherwise
      */
-    bool setTargetDec(int d, unsigned int m, unsigned int s) override;
+    bool setTargetDec(int d, unsigned int m, unsigned int s);
 
     /**
      * @brief Set the Target Ra
@@ -35,5 +33,5 @@ public:
      * 
      * @return true if successful, false otherwise
      */
-    bool setTargetRa(unsigned int h, unsigned int m, unsigned int s) override;
+    bool setTargetRa(unsigned int h, unsigned int m, unsigned int s);
 };

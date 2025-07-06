@@ -3,7 +3,6 @@ module-str = firmware
 source "subsys/logging/Kconfig.template.log_config"
 
 rsource "src/mount/Kconfig"
-rsource "src/processor/lx200/Kconfig"
 
 menu "Zephyr"
 source "Kconfig.zephyr"

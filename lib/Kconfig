@@ -3,6 +3,6 @@
 
 menu "Custom libraries"
 
-rsource "custom/Kconfig"
+rsource "lx200/Kconfig"
 
 endmenu
