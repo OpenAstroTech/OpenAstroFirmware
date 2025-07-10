@@ -32,6 +32,7 @@ jobs:
         working-directory: OpenAstroFirmware
         shell: bash
         run: |
+          export ZEPHYR_BOARD_ROOT=${GITHUB_WORKSPACE}/boards
           if [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
@@ -41,6 +42,7 @@ jobs:
         working-directory: OpenAstroFirmware
         shell: bash
         run: |
+          export ZEPHYR_BOARD_ROOT=${GITHUB_WORKSPACE}/boards
           if [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
