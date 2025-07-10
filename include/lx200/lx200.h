@@ -17,7 +17,7 @@
  *
  * COMMAND FORMAT:
  * ==============
- * Basic format: :<command>[parameters]#
+ * Basic format: :\<command\>[parameters]#
  * - Commands are case-sensitive
  * - Parameters use specific formats (coordinates, numbers, etc.)
  * - Responses vary by command type
