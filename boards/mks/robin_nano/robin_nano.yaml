@@ -1,0 +1,13 @@
+identifier: robin_nano
+name: Robin Nano
+vendor: mks
+type: mcu
+arch: arm
+ram: 196
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio

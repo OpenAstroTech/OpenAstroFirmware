@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Legrand North America, LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Custom libraries"
+menu "Custom Libraries"
 
 rsource "lx200/Kconfig"
 

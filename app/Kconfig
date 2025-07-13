@@ -1,5 +1,5 @@
-module = FIRMWARE
-module-str = firmware
+module = APP
+module-str = app
 source "subsys/logging/Kconfig.template.log_config"
 
 rsource "src/mount/Kconfig"
