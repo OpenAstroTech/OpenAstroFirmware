@@ -1,138 +1,202 @@
-# Zephyr Example Application
+<div id="top">
+  <p>
+  <h2>This project is work in progress and is not for use or testing yet! Really, you don't want to use it at the moment!</h2>
+  </p>
+  <br />
+</div>
 
-<a href="https://github.com/zephyrproject-rtos/example-application/actions/workflows/build.yml?query=branch%3Amain">
-  <img src="https://github.com/zephyrproject-rtos/example-application/actions/workflows/build.yml/badge.svg?event=push">
-</a>
-<a href="https://github.com/zephyrproject-rtos/example-application/actions/workflows/docs.yml?query=branch%3Amain">
-  <img src="https://github.com/zephyrproject-rtos/example-application/actions/workflows/docs.yml/badge.svg?event=push">
-</a>
-<a href="https://zephyrproject-rtos.github.io/example-application">
-  <img alt="Documentation" src="https://img.shields.io/badge/documentation-3D578C?logo=sphinx&logoColor=white">
-</a>
-<a href="https://zephyrproject-rtos.github.io/example-application/doxygen">
-  <img alt="API Documentation" src="https://img.shields.io/badge/API-documentation-3D578C?logo=c&logoColor=white">
-</a>
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
 
-This repository contains a Zephyr example application. The main purpose of this
-repository is to serve as a reference on how to structure Zephyr-based
-applications. Some of the features demonstrated in this example are:
 
-- Basic [Zephyr application][app_dev] skeleton
-- [Zephyr workspace applications][workspace_app]
-- [Zephyr modules][modules]
-- [West T2 topology][west_t2]
-- [Custom boards][board_porting]
-- Custom [devicetree bindings][bindings]
-- Out-of-tree [drivers][drivers]
-- Out-of-tree libraries
-- Example CI configuration (using GitHub Actions)
-- Custom [west extension][west_ext]
-- Custom [Zephyr runner][runner_ext]
-- Doxygen and Sphinx documentation boilerplate
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+   <a href="https://github.com/OpenAstroTech/OpenAstroFirmware">
+   <img src="assets/images/logo.png" alt="Logo" width="80" height="80">
+   </a>
+   <h3 align="center">OpenAstroFirmware</h3>
+   <p align="center">
+      Official Firmware for DIY astronomical telescope mounts. This firmware is the 2.x successor of the <a href="https://github.com/OpenAstroTech/OpenAstroTracker-Firmware">OpenAstroTracker-Firmware</a>.
+   </p>
+</div>
 
-This repository is versioned together with the [Zephyr main tree][zephyr]. This
-means that every time that Zephyr is tagged, this repository is tagged as well
-with the same version number, and the [manifest](west.yml) entry for `zephyr`
-will point to the corresponding Zephyr tag. For example, the `example-application`
-v2.6.0 will point to Zephyr v2.6.0. Note that the `main` branch always
-points to the development branch of Zephyr, also `main`.
 
-[app_dev]: https://docs.zephyrproject.org/latest/develop/application/index.html
-[workspace_app]: https://docs.zephyrproject.org/latest/develop/application/index.html#zephyr-workspace-app
-[modules]: https://docs.zephyrproject.org/latest/develop/modules.html
-[west_t2]: https://docs.zephyrproject.org/latest/develop/west/workspaces.html#west-t2
-[board_porting]: https://docs.zephyrproject.org/latest/guides/porting/board_porting.html
-[bindings]: https://docs.zephyrproject.org/latest/guides/dts/bindings.html
-[drivers]: https://docs.zephyrproject.org/latest/reference/drivers/index.html
-[zephyr]: https://github.com/zephyrproject-rtos/zephyr
-[west_ext]: https://docs.zephyrproject.org/latest/develop/west/extensions.html
-[runner_ext]: https://docs.zephyrproject.org/latest/develop/modules.html#external-runners
 
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#supported-hardware">Supported hardware</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#build">Build</a></li>
+        <li><a href="#upload">Upload</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+It was a very long and educational time developing, testing and improving [OpenAstroTracker-Firmware](https://github.com/OpenAstroTech/OpenAstroTracker-Firmware) for all of us. It evolved and grew over time as did our hardware support. Amount and type of supported mounts, components, addons and software tools keep increasing. This is why dev team decided to go one step back and redesign the firmware based on the experience with v1 and community feedback and requests. This firmware aims to bring following improvements over time compared to OpenAstroTracker-Firmware:
+
+### Usage
+* Easier configuration, flashing and updates
+* Improved stability
+* Improved/Automated calibration
+* New types of addons (these could be among other things Touch display, Mobile app etc.)
+* Ability to track "custom" objects (e.g. Sun, Moon, ISS, Comets etc.)
+* Support for more types of mounts (OAT, OAM, any further Mounts and their versions designed by OpenAstroTech and retrofitted 3rd party mounts)
+* Several new QoL features
+
+### Development
+* Easier maintenability and extendability
+* Automated testing
+* Support for modern 32-bit boards to improve performance, accuracy and reduce the need for hardcore optimizations.
+* In hardware debugging
+* Higher code quality by following best practices and a predefined architecture design
+* Ability to test and run main code and test directly on the host pc to simplify issue analysis
+* Support and usage of modern c++ features to improve readability and clarity of the code
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+### Built With
+
+* [Zephyr]([https://platformio.org/](https://docs.zephyrproject.org/3.7.0/))
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+<!-- GETTING STARTED -->
 ## Getting Started
 
-Before getting started, make sure you have a proper Zephyr development
-environment. Follow the official
-[Zephyr Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html).
+This is an example of how you may give instructions on setting up your project locally.
+To get a local copy up and running follow these simple example steps.
 
-### Initialization
+### Supported hardware
 
-The first step is to initialize the workspace folder (``my-workspace``) where
-the ``example-application`` and all Zephyr modules will be cloned. Run the following
-command:
+*TBD*
 
-```shell
-# initialize my-workspace for the example-application (main branch)
-west init -m https://github.com/zephyrproject-rtos/example-application --mr main my-workspace
-# update Zephyr modules
-cd my-workspace
-west update
-```
+### Prerequisites
 
-### Building and running
+*TBD*
 
-To build the application, run the following command:
+### Configuration
 
-```shell
-cd example-application
-west build -b $BOARD app
-```
+*TBD*
 
-where `$BOARD` is the target board.
+### Build
 
-You can use the `custom_plank` board found in this
-repository. Note that Zephyr sample boards may be used if an
-appropriate overlay is provided (see `app/boards`).
+*TBD*
 
-A sample debug configuration is also provided. To apply it, run the following
-command:
+### Upload
 
-```shell
-west build -b $BOARD app -- -DEXTRA_CONF_FILE=debug.conf
-```
+*TBD*
 
-Once you have built the application, run the following command to flash it:
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-```shell
-west flash
-```
 
-### Testing
 
-To execute Twister integration tests, run the following command:
+<!-- USAGE EXAMPLES -->
+## Usage
 
-```shell
-west twister -T tests --integration
-```
+*TBD*
 
-### Documentation
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-A minimal documentation setup is provided for Doxygen and Sphinx. To build the
-documentation first change to the ``doc`` folder:
 
-```shell
-cd doc
-```
 
-Before continuing, check if you have Doxygen installed. It is recommended to
-use the same Doxygen version used in [CI](.github/workflows/docs.yml). To
-install Sphinx, make sure you have a Python installation in place and run:
+<!-- ROADMAP -->
+## Roadmap
 
-```shell
-pip install -r requirements.txt
-```
+- [ ] Build environment setup
+    - [ ] *TBD*
+- [ ] MVP
+    - [ ] *TBD*
 
-API documentation (Doxygen) can be built using the following command:
+See the [open issues](https://github.com/OpenAstroTech/OpenAstroFirmware/issues) for a full list of proposed features (and known issues).
 
-```shell
-doxygen
-```
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-The output will be stored in the ``_build_doxygen`` folder. Similarly, the
-Sphinx documentation (HTML) can be built using the following command:
 
-```shell
-make html
-```
 
-The output will be stored in the ``_build_sphinx`` folder. You may check for
-other output formats other than HTML by running ``make help``.
+<!-- CONTRIBUTING -->
+## Contributing
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Don't forget to give the project a star! Thanks again!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `LICENSE.txt` for more information.
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+<!-- CONTACT -->
+## Contact
+
+Project Link: [https://github.com/OpenAstroTech/OpenAstroFirmware](https://github.com/OpenAstroTech/OpenAstroFirmware)
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
+[contributors-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
+[forks-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/network/members
+[stars-shield]: https://img.shields.io/github/stars/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
+[stars-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/stargazers
+[issues-shield]: https://img.shields.io/github/issues/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
+[issues-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/issues
+[license-shield]: https://img.shields.io/github/license/OpenAstroTech/OpenAstroFirmware.svg?style=for-the-badge
+[license-url]: https://github.com/OpenAstroTech/OpenAstroFirmware/blob/master/LICENSE
