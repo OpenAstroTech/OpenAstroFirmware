@@ -213,10 +213,10 @@ ZTEST(lx200_parser, test_parse_command_string_various_commands)
 		bool has_param;
 	} test_cases[] = {
 		{":AA#", "AA", LX200_CMD_ALIGNMENT, false},
-		{":B+#", "B", LX200_CMD_RETICLE, false},
+		{":B+#", "B+", LX200_CMD_RETICLE, false},
 		{":CM#", "CM", LX200_CMD_SYNC, false},
 		{":D#", "D", LX200_CMD_DISTANCE, false},
-		{":F+#", "F", LX200_CMD_FOCUSER, false},
+		{":F+#", "F+", LX200_CMD_FOCUSER, false},
 		{":GD#", "GD", LX200_CMD_GET, false},
 		{":gT#", "gT", LX200_CMD_GPS, false},
 		{":H#", "H", LX200_CMD_TIME_FORMAT, false},

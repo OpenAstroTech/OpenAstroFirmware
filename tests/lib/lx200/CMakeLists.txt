@@ -10,6 +10,3 @@ target_sources(app PRIVATE
     src/main.c
     src/test_coordinates.c
 )
-
-# Link against the LX200 library
-target_link_libraries(app PRIVATE lx200)

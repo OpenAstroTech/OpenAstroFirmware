@@ -323,11 +323,28 @@ lx200_parse_result_t lx200_parse_command_string(const char *cmd_string, lx200_co
 	size_t cmd_len = 0;
 	for (size_t i = 1; i < len - 1 && cmd_len < 3; i++) {
 		char c = cmd_string[i];
-		// Stop at first non-alphabetic character (start of parameter)
-		if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+		// Include alphabetic characters
+		if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+			command->command[cmd_len++] = c;
+		} else if (cmd_len > 0) {
+			// Check if this might be a symbol that's part of the command
+			// Only for specific command families that use symbol suffixes
+			char first_char = command->command[0];
+			if ((first_char == 'B' || first_char == 'F' || first_char == 'T') && 
+			    (c == '+' || c == '-')) {
+				// These commands use +/- as part of the command
+				command->command[cmd_len++] = c;
+			} else if (first_char == 'R' && (c >= '0' && c <= '9')) {
+				// Rate commands can have numbers
+				command->command[cmd_len++] = c;
+			} else {
+				// Stop here - this starts the parameter
+				break;
+			}
+		} else {
+			// Stop at first character that's not part of a command
 			break;
 		}
-		command->command[cmd_len++] = c;
 	}
 	command->command[cmd_len] = '\0';
 
