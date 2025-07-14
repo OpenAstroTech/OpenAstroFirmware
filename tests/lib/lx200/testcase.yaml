@@ -1,7 +1,17 @@
 common:
-  tags: extensibility
+  tags:
+    - lx200
+    - telescope
+    - protocol
+    - parser
+  timeout: 60
   integration_platforms:
     - robin_nano
     - native_sim
+  platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_cortex_m3
+
 tests:
   lib.lx200: {}

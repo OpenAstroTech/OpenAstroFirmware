@@ -30,7 +30,7 @@
  * - Time: HH:MM:SS
  * - Date: MM/DD/YY
  *
- * COMMAND CATEGORIES:
+ * COMMAND FAMILIES:
  * ==================
  *
  * A - ALIGNMENT COMMANDS
@@ -348,7 +348,7 @@ typedef enum {
 } lx200_parse_result_t;
 
 /**
- * @brief LX200 command categories
+ * @brief LX200 command families
  */
 typedef enum {
 	/** Alignment commands (A) */
@@ -385,9 +385,9 @@ typedef enum {
 	LX200_CMD_TRACKING,
 	/** Precision toggle (U) */
 	LX200_CMD_PRECISION_TOGGLE,
-	/** Unknown command category */
+	/** Unknown command family */
 	LX200_CMD_UNKNOWN
-} lx200_command_category_t;
+} lx200_command_family_t;
 
 /**
  * @brief LX200 coordinate formats
@@ -511,8 +511,8 @@ typedef struct {
  * @brief LX200 parsed command structure
  */
 typedef struct {
-	/** Command category */
-	lx200_command_category_t category;
+	/** Command family */
+	lx200_command_family_t family;
 	/** Command string (up to 3 chars + null) */
 	char command[4];
 	/** Command parameter */
@@ -731,7 +731,7 @@ int lx200_format_date(const lx200_date_t *date, char *str, size_t str_size);
  * @return true if coordinate is valid, false otherwise
  */
 bool lx200_validate_coordinate(const lx200_coordinate_t *coord,
-			       lx200_command_category_t coord_type);
+			       lx200_command_family_t coord_type);
 
 /**
  * @brief Validate time values
@@ -752,11 +752,11 @@ bool lx200_validate_date(const lx200_date_t *date);
  * ============================================================================ */
 
 /**
- * @brief Get command category from command string
+ * @brief Get command family from command string
  * @param command Command string
- * @return Command category
+ * @return Command family
  */
-lx200_command_category_t lx200_get_command_category(const char *command);
+lx200_command_family_t lx200_get_command_family(const char *command);
 
 /**
  * @brief Check if command expects a parameter
