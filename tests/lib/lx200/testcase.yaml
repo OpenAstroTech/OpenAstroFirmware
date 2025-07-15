@@ -12,6 +12,7 @@ common:
     - native_sim
     - qemu_x86
     - qemu_cortex_m3
+    - robin_nano
 
 tests:
   lib.lx200: {}
