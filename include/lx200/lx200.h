@@ -30,7 +30,7 @@
  * - Time: HH:MM:SS
  * - Date: MM/DD/YY
  *
- * COMMAND CATEGORIES:
+ * COMMAND FAMILIES:
  * ==================
  *
  * A - ALIGNMENT COMMANDS
@@ -216,7 +216,8 @@
  * :Me#    - Start slewing east at current slew rate
  * :Mw#    - Start slewing west at current slew rate
  * :MS#    - Slew to target coordinates
- *           Returns: 0# (slew possible) or 1# (object below horizon) or 2# (object below higher limit)
+ *           Returns: 0# (slew possible) or 1# (object below horizon) or 2# (object below higher
+ * limit)
  *
  * APPENDIX A: LX200GPS COMMAND EXTENSIONS
  * ======================================
@@ -286,3 +287,516 @@
  */
 
 #pragma once
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup lx200_parser LX200 Protocol Parser
+ * @brief Parser and handler functions for the Meade LX200 telescope protocol
+ * @{
+ */
+
+/* ============================================================================
+ * CONSTANTS AND DEFINITIONS
+ * ============================================================================ */
+
+/** Maximum length of an LX200 command including terminator */
+#define LX200_MAX_COMMAND_LENGTH 32
+
+/** Maximum length of an LX200 response including terminator */
+#define LX200_MAX_RESPONSE_LENGTH 64
+
+/** LX200 command prefix character */
+#define LX200_COMMAND_PREFIX ':'
+
+/** LX200 command terminator character */
+#define LX200_COMMAND_TERMINATOR '#'
+
+/** LX200 response terminator character */
+#define LX200_RESPONSE_TERMINATOR '#'
+
+/* ============================================================================
+ * ENUMERATIONS
+ * ============================================================================ */
+
+/**
+ * @brief LX200 command parsing result codes
+ */
+typedef enum {
+	/** Command parsed successfully */
+	LX200_PARSE_OK = 0,
+	/** Command is incomplete, need more data */
+	LX200_PARSE_INCOMPLETE,
+	/** Invalid command prefix */
+	LX200_PARSE_INVALID_PREFIX,
+	/** Invalid or missing terminator */
+	LX200_PARSE_INVALID_TERMINATOR,
+	/** Unknown or malformed command */
+	LX200_PARSE_INVALID_COMMAND,
+	/** Invalid parameter format */
+	LX200_PARSE_INVALID_PARAMETER,
+	/** Command too long for buffer */
+	LX200_PARSE_BUFFER_OVERFLOW,
+	/** General parsing error */
+	LX200_PARSE_ERROR
+} lx200_parse_result_t;
+
+/**
+ * @brief LX200 command families
+ */
+typedef enum {
+	/** Alignment commands (A) */
+	LX200_CMD_ALIGNMENT,
+	/** Reticle/accessory control (B) */
+	LX200_CMD_RETICLE,
+	/** Sync control (C) */
+	LX200_CMD_SYNC,
+	/** Distance bars (D) */
+	LX200_CMD_DISTANCE,
+	/** Focuser control (F) */
+	LX200_CMD_FOCUSER,
+	/** Get telescope information (G) */
+	LX200_CMD_GET,
+	/** GPS/magnetometer commands (g) */
+	LX200_CMD_GPS,
+	/** Time format command (H) */
+	LX200_CMD_TIME_FORMAT,
+	/** Initialize telescope (I) */
+	LX200_CMD_INITIALIZE,
+	/** Object library commands (L) */
+	LX200_CMD_LIBRARY,
+	/** Movement commands (M) */
+	LX200_CMD_MOVE,
+	/** High precision toggle (P) */
+	LX200_CMD_PRECISION,
+	/** Stop movement commands (Q) */
+	LX200_CMD_STOP,
+	/** Slew rate commands (R) */
+	LX200_CMD_SLEW_RATE,
+	/** Set telescope parameters (S) */
+	LX200_CMD_SET,
+	/** Tracking commands (T) */
+	LX200_CMD_TRACKING,
+	/** Precision toggle (U) */
+	LX200_CMD_PRECISION_TOGGLE,
+	/** Unknown command family */
+	LX200_CMD_UNKNOWN
+} lx200_command_family_t;
+
+/**
+ * @brief LX200 coordinate formats
+ */
+typedef enum {
+	/** HH:MM.T, sDD*MM */
+	LX200_COORD_LOW_PRECISION,
+	/** HH:MM:SS, sDD*MM:SS */
+	LX200_COORD_HIGH_PRECISION
+} lx200_precision_t;
+
+/**
+ * @brief LX200 alignment modes
+ */
+typedef enum {
+	/** Polar alignment mode */
+	LX200_ALIGN_POLAR,
+	/** Alt-Az alignment mode */
+	LX200_ALIGN_ALTAZ,
+	/** Land alignment mode */
+	LX200_ALIGN_LAND
+} lx200_alignment_mode_t;
+
+/**
+ * @brief LX200 tracking rates
+ */
+typedef enum {
+	/** Tracking disabled */
+	LX200_TRACK_OFF,
+	/** Sidereal tracking rate */
+	LX200_TRACK_SIDEREAL,
+	/** Solar tracking rate */
+	LX200_TRACK_SOLAR,
+	/** Lunar tracking rate */
+	LX200_TRACK_LUNAR
+} lx200_tracking_rate_t;
+
+/**
+ * @brief LX200 slew rates
+ */
+typedef enum {
+	/** Guide rate (0.5x sidereal) */
+	LX200_SLEW_GUIDE,
+	/** Centering rate (8x sidereal) */
+	LX200_SLEW_CENTERING,
+	/** Find rate (16x sidereal) */
+	LX200_SLEW_FIND,
+	/** Slew rate (512x sidereal) */
+	LX200_SLEW_SLEW,
+	/** Custom rate 0 */
+	LX200_SLEW_CUSTOM_0,
+	/** Custom rate 1 */
+	LX200_SLEW_CUSTOM_1,
+	/** Custom rate 2 */
+	LX200_SLEW_CUSTOM_2,
+	/** Custom rate 3 */
+	LX200_SLEW_CUSTOM_3,
+	/** Custom rate 4 */
+	LX200_SLEW_CUSTOM_4,
+	/** Custom rate 5 */
+	LX200_SLEW_CUSTOM_5,
+	/** Custom rate 6 */
+	LX200_SLEW_CUSTOM_6,
+	/** Custom rate 7 */
+	LX200_SLEW_CUSTOM_7,
+	/** Custom rate 8 */
+	LX200_SLEW_CUSTOM_8,
+	/** Custom rate 9 */
+	LX200_SLEW_CUSTOM_9
+} lx200_slew_rate_t;
+
+/* ============================================================================
+ * STRUCTURE DEFINITIONS
+ * ============================================================================ */
+
+/**
+ * @brief LX200 coordinate structure
+ */
+typedef struct {
+	/** Degrees component */
+	int16_t degrees;
+	/** Minutes component */
+	uint8_t minutes;
+	/** Seconds component */
+	uint8_t seconds;
+	/** Tenths of minutes (low precision mode) */
+	uint8_t tenths;
+	/** True if coordinate is negative */
+	bool is_negative;
+	/** Coordinate precision */
+	lx200_precision_t precision;
+} lx200_coordinate_t;
+
+/**
+ * @brief LX200 time structure
+ */
+typedef struct {
+	/** Hours (0-23) */
+	uint8_t hours;
+	/** Minutes (0-59) */
+	uint8_t minutes;
+	/** Seconds (0-59) */
+	uint8_t seconds;
+	/** True for 24h format, false for 12h */
+	bool is_24h_format;
+} lx200_time_t;
+
+/**
+ * @brief LX200 date structure
+ */
+typedef struct {
+	/** Month (1-12) */
+	uint8_t month;
+	/** Day (1-31) */
+	uint8_t day;
+	/** Year (0-99, represents 2000-2099) */
+	uint8_t year;
+} lx200_date_t;
+
+/**
+ * @brief LX200 parsed command structure
+ */
+typedef struct {
+	/** Command family */
+	lx200_command_family_t family;
+	/** Command string (up to 3 chars + null) */
+	char command[4];
+	/** Command parameter */
+	char parameter[LX200_MAX_COMMAND_LENGTH];
+	/** Length of parameter */
+	size_t parameter_length;
+	/** True if command has parameter */
+	bool has_parameter;
+} lx200_command_t;
+
+/**
+ * @brief LX200 parser state structure
+ */
+typedef struct {
+	/** Input buffer */
+	char buffer[LX200_MAX_COMMAND_LENGTH];
+	/** Current buffer length */
+	size_t buffer_length;
+	/** True when command is complete */
+	bool command_complete;
+	/** Current precision mode */
+	lx200_precision_t precision_mode;
+} lx200_parser_state_t;
+
+/* ============================================================================
+ * FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+/**
+ * @brief Initialize LX200 parser state
+ * @param state Pointer to parser state structure
+ */
+void lx200_parser_init(lx200_parser_state_t *state);
+
+/**
+ * @brief Reset LX200 parser state
+ * @param state Pointer to parser state structure
+ */
+void lx200_parser_reset(lx200_parser_state_t *state);
+
+/**
+ * @brief Add data to LX200 parser buffer
+ * @param state Pointer to parser state structure
+ * @param data Pointer to input data
+ * @param length Length of input data
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parser_add_data(lx200_parser_state_t *state, const char *data,
+					   size_t length);
+
+/**
+ * @brief Parse complete LX200 command
+ * @param state Pointer to parser state structure
+ * @param command Pointer to output command structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_command(const lx200_parser_state_t *state,
+					 lx200_command_t *command);
+
+/**
+ * @brief Parse LX200 command from string
+ * @param cmd_string Command string to parse
+ * @param command Pointer to output command structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_command_string(const char *cmd_string, lx200_command_t *command);
+
+/* ============================================================================
+ * COORDINATE PARSING FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * @brief Parse right ascension coordinate
+ * @param str Input string (HH:MM:SS or HH:MM.T format)
+ * @param coord Pointer to output coordinate structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_ra_coordinate(const char *str, lx200_coordinate_t *coord);
+
+/**
+ * @brief Parse declination coordinate
+ * @param str Input string (sDD*MM:SS or sDD*MM format)
+ * @param coord Pointer to output coordinate structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_dec_coordinate(const char *str, lx200_coordinate_t *coord);
+
+/**
+ * @brief Parse altitude coordinate
+ * @param str Input string (sDD*MM:SS or sDD*MM format)
+ * @param coord Pointer to output coordinate structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_alt_coordinate(const char *str, lx200_coordinate_t *coord);
+
+/**
+ * @brief Parse azimuth coordinate
+ * @param str Input string (DDD*MM:SS or DDD*MM format)
+ * @param coord Pointer to output coordinate structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_az_coordinate(const char *str, lx200_coordinate_t *coord);
+
+/**
+ * @brief Parse longitude coordinate
+ * @param str Input string (sDDD*MM format)
+ * @param coord Pointer to output coordinate structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_longitude(const char *str, lx200_coordinate_t *coord);
+
+/**
+ * @brief Parse latitude coordinate
+ * @param str Input string (sDD*MM format)
+ * @param coord Pointer to output coordinate structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_latitude(const char *str, lx200_coordinate_t *coord);
+
+/* ============================================================================
+ * TIME AND DATE PARSING FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * @brief Parse time value
+ * @param str Input string (HH:MM:SS format)
+ * @param time Pointer to output time structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_time(const char *str, lx200_time_t *time);
+
+/**
+ * @brief Parse date value
+ * @param str Input string (MM/DD/YY format)
+ * @param date Pointer to output date structure
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_date(const char *str, lx200_date_t *date);
+
+/**
+ * @brief Parse UTC offset
+ * @param str Input string (sHH or sHH.H format)
+ * @param offset Pointer to output offset in hours
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_utc_offset(const char *str, float *offset);
+
+/* ============================================================================
+ * PARAMETER PARSING FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * @brief Parse tracking rate parameter
+ * @param str Input string (TT.T format)
+ * @param rate Pointer to output tracking rate
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_tracking_rate(const char *str, float *rate);
+
+/**
+ * @brief Parse slew rate parameter
+ * @param str Input string (single digit 0-9)
+ * @param rate Pointer to output slew rate
+ * @return Parse result code
+ */
+lx200_parse_result_t lx200_parse_slew_rate(const char *str, lx200_slew_rate_t *rate);
+
+/* ============================================================================
+ * FORMATTING FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * @brief Format right ascension coordinate to string
+ * @param coord Pointer to coordinate structure
+ * @param str Output string buffer
+ * @param str_size Size of output buffer
+ * @return Number of characters written, or negative on error
+ */
+int lx200_format_ra_coordinate(const lx200_coordinate_t *coord, char *str, size_t str_size);
+
+/**
+ * @brief Format declination coordinate to string
+ * @param coord Pointer to coordinate structure
+ * @param str Output string buffer
+ * @param str_size Size of output buffer
+ * @return Number of characters written, or negative on error
+ */
+int lx200_format_dec_coordinate(const lx200_coordinate_t *coord, char *str, size_t str_size);
+
+/**
+ * @brief Format time to string
+ * @param time Pointer to time structure
+ * @param str Output string buffer
+ * @param str_size Size of output buffer
+ * @return Number of characters written, or negative on error
+ */
+int lx200_format_time(const lx200_time_t *time, char *str, size_t str_size);
+
+/**
+ * @brief Format date to string
+ * @param date Pointer to date structure
+ * @param str Output string buffer
+ * @param str_size Size of output buffer
+ * @return Number of characters written, or negative on error
+ */
+int lx200_format_date(const lx200_date_t *date, char *str, size_t str_size);
+
+/* ============================================================================
+ * VALIDATION FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * @brief Validate coordinate values
+ * @param coord Pointer to coordinate structure
+ * @param coord_type Type of coordinate (RA, Dec, Alt, Az, etc.)
+ * @return true if coordinate is valid, false otherwise
+ */
+bool lx200_validate_coordinate(const lx200_coordinate_t *coord,
+			       lx200_command_family_t coord_type);
+
+/**
+ * @brief Validate time values
+ * @param time Pointer to time structure
+ * @return true if time is valid, false otherwise
+ */
+bool lx200_validate_time(const lx200_time_t *time);
+
+/**
+ * @brief Validate date values
+ * @param date Pointer to date structure
+ * @return true if date is valid, false otherwise
+ */
+bool lx200_validate_date(const lx200_date_t *date);
+
+/* ============================================================================
+ * UTILITY FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * @brief Get command family from command string
+ * @param command Command string
+ * @return Command family
+ */
+lx200_command_family_t lx200_get_command_family(const char *command);
+
+/**
+ * @brief Check if command expects a parameter
+ * @param command Command string
+ * @return true if command expects parameter, false otherwise
+ */
+bool lx200_command_has_parameter(const char *command);
+
+/**
+ * @brief Get expected parameter format for command
+ * @param command Command string
+ * @return Pointer to format description string
+ */
+const char *lx200_get_parameter_format(const char *command);
+
+/**
+ * @brief Convert parse result to string
+ * @param result Parse result code
+ * @return Pointer to result description string
+ */
+const char *lx200_parse_result_to_string(lx200_parse_result_t result);
+
+/**
+ * @brief Set precision mode
+ * @param state Pointer to parser state structure
+ * @param precision Precision mode to set
+ */
+void lx200_set_precision_mode(lx200_parser_state_t *state, lx200_precision_t precision);
+
+/**
+ * @brief Get current precision mode
+ * @param state Pointer to parser state structure
+ * @return Current precision mode
+ */
+lx200_precision_t lx200_get_precision_mode(const lx200_parser_state_t *state);
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif

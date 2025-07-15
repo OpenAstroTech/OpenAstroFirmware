@@ -5,3 +5,11 @@ config LX200
 	bool "Support for lx200 protocol"
 	help
 	  This option enables support for the lx200 protocol.
+
+if LX200
+
+module = LX200
+module-str = lx200
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # LX200
