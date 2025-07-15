@@ -117,7 +117,11 @@ To get started with OpenAstroFirmware development or to build and deploy the fir
   - GPIO-based stepper motor drivers  
   - Testing/simulation drivers for development
 
-### Prerequisites
+### Development Environment Setup
+
+Before getting started, make sure you have a proper Zephyr development environment. Follow the official [Zephyr Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html).
+
+#### Prerequisites
 
 - **Zephyr SDK** - Required for cross-compilation and board support
 - **West** - Zephyr's meta-tool for project management and building
@@ -128,13 +132,39 @@ To get started with OpenAstroFirmware development or to build and deploy the fir
 
 #### Installation
 
-1. Install the Zephyr SDK following the [official Zephyr getting started guide](https://docs.zephyrproject.org/latest/getting_started/index.html)
-2. Set up the Python virtual environment and install West:
+1. **Install the Zephyr SDK**: Follow the [official Zephyr getting started guide](https://docs.zephyrproject.org/latest/getting_started/index.html) for your operating system.
+
+2. **Set up Python virtual environment and install West**:
    ```bash
    python3 -m venv ~/.venv
    source ~/.venv/bin/activate
    pip install west
    ```
+
+#### Workspace Initialization
+
+The first step is to initialize the workspace folder where the `OpenAstroFirmware` and all Zephyr modules will be cloned. Run the following command:
+
+```bash
+# Initialize workspace for OpenAstroFirmware
+west init -m https://github.com/OpenAstroTech/OpenAstroFirmware --mr main OpenAstroTech-workspace
+# Update Zephyr modules
+cd OpenAstroTech-workspace
+west update
+```
+
+After initialization, your workspace structure will look like:
+```
+OpenAstroTech-workspace/
+├── OpenAstroFirmware/     # This repository
+├── zephyr/                # Zephyr RTOS
+└── modules/               # Zephyr modules (HAL, libraries, etc.)
+```
+
+**Important**: Remember to activate your Python virtual environment each time you start working on the project:
+```bash
+source ~/.venv/bin/activate
+```
 
 ### Configuration
 
@@ -155,13 +185,13 @@ west build -t guiconfig     # GUI configuration tool
 
 #### For Native Simulation (Development/Testing)
 ```bash
-cd OpenAstroFirmware/app
+cd OpenAstroTech-workspace/OpenAstroFirmware/app
 west build -b native_sim
 ```
 
 #### For MKS Robin Nano (Production Hardware)
 ```bash
-cd OpenAstroFirmware/app  
+cd OpenAstroTech-workspace/OpenAstroFirmware/app  
 west build -b mks_robin_nano
 ```
 
@@ -241,13 +271,13 @@ The firmware implements the standard LX200 protocol for communication with plane
     - [x] Cross-compilation support
     - [x] Native simulation target
 - [x] Core Foundation
-    - [x] LX200 protocol library implementation
-    - [x] Mount coordinate management (RA/DEC)
-    - [x] Stepper motor driver framework
+    - [ ] LX200 protocol library implementation
+    - [ ] Mount coordinate management (RA/DEC)
+    - [ ] Stepper motor driver framework
     - [x] Board support for MKS Robin Nano
     - [x] Logging and debugging infrastructure
 - [ ] MVP (In Progress)
-    - [x] Basic mount control interface
+    - [ ] Basic mount control interface
     - [ ] Complete LX200 command set implementation
     - [ ] Motor calibration and homing
     - [ ] Real-time telescope tracking
