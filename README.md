@@ -93,7 +93,10 @@ It was a very long and educational time developing, testing and improving [OpenA
 
 ### Built With
 
-* [Zephyr]([https://platformio.org/](https://docs.zephyrproject.org/3.7.0/))
+* [Zephyr RTOS](https://docs.zephyrproject.org/) - Real-time operating system for connected, resource-constrained devices
+* [West](https://docs.zephyrproject.org/latest/guides/west/index.html) - Zephyr's meta-tool for managing project repositories
+* [CMake](https://cmake.org/) - Cross-platform build system
+* C++ - Modern C++ for telescope mount control implementation
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -102,28 +105,94 @@ It was a very long and educational time developing, testing and improving [OpenA
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+To get started with OpenAstroFirmware development or to build and deploy the firmware for your telescope mount, follow these steps. The project supports both hardware deployment (MKS Robin Nano) and native simulation for development and testing.
 
 ### Supported hardware
 
-*TBD*
+- **MKS Robin Nano** (STM32F407xx-based controller board) - Production target
+- **native_sim** - Development and testing platform
+- STM32F407xx microcontroller family support
+- Stepper motor drivers:
+  - TMC stepper motor controllers
+  - GPIO-based stepper motor drivers  
+  - Testing/simulation drivers for development
 
 ### Prerequisites
 
-*TBD*
+- **Zephyr SDK** - Required for cross-compilation and board support
+- **West** - Zephyr's meta-tool for project management and building
+- **CMake** (version 3.20.0 or higher) - Build system
+- **Ninja** - Fast build tool
+- **Python 3** (with pip) - For build scripts and utilities
+- **Git** - For version control and West manifest management
+
+#### Installation
+
+1. Install the Zephyr SDK following the [official Zephyr getting started guide](https://docs.zephyrproject.org/latest/getting_started/index.html)
+2. Set up the Python virtual environment and install West:
+   ```bash
+   python3 -m venv ~/.venv
+   source ~/.venv/bin/activate
+   pip install west
+   ```
 
 ### Configuration
 
-*TBD*
+The firmware uses Zephyr's Kconfig system for configuration. Key configuration files:
+
+- `app/prj.conf` - Main project configuration
+- `app/boards/native_sim.conf` - Native simulator specific settings  
+- `app/boards/native_sim.overlay` - Device tree overlay for simulation
+- Board-specific configurations in `boards/` directory
+
+Configuration can be modified using:
+```bash
+west build -t menuconfig    # Interactive configuration menu
+west build -t guiconfig     # GUI configuration tool
+```
 
 ### Build
 
-*TBD*
+#### For Native Simulation (Development/Testing)
+```bash
+cd OpenAstroFirmware/app
+west build -b native_sim
+```
+
+#### For MKS Robin Nano (Production Hardware)
+```bash
+cd OpenAstroFirmware/app  
+west build -b mks_robin_nano
+```
+
+#### Clean Build
+```bash
+west build -t pristine     # Clean all build artifacts
+west build -b <board_name> # Rebuild from scratch
+```
+
+The build system supports:
+- Cross-compilation for STM32F407xx targets
+- Native compilation for PC-based testing
+- Comprehensive testing with automated test suites
 
 ### Upload
 
-*TBD*
+#### Native Simulation
+```bash
+west build -t run          # Run the firmware in simulation
+```
+
+#### Hardware Targets (MKS Robin Nano)
+```bash
+west flash                  # Flash firmware to connected hardware
+west debug                  # Start debugging session
+west attach                 # Attach debugger to running target
+```
+
+Additional upload options:
+- `west build -t flash` - Alternative flash command
+- Custom flash runners supported via Zephyr's runner system
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -132,7 +201,32 @@ To get a local copy up and running follow these simple example steps.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-*TBD*
+OpenAstroFirmware provides telescope mount control with the following capabilities:
+
+### Core Features
+- **LX200 Protocol Support** - Compatible with Meade LX200 command set for telescope control software
+- **Stepper Motor Control** - Precise control of RA and DEC axes with multiple driver support
+- **Mount Coordinate Management** - Right Ascension and Declination positioning
+- **Cross-Platform Development** - Native simulation for testing without hardware
+
+### LX200 Command Interface
+The firmware implements the standard LX200 protocol for communication with planetarium software like:
+- SkySafari
+- Stellarium  
+- TheSkyX
+- Cartes du Ciel
+- Any ASCOM-compatible software
+
+### Hardware Control
+- Stepper motor drivers (TMC, GPIO-based)
+- STM32F407xx microcontroller support
+- Extensible driver architecture for additional hardware components
+
+### Development and Testing
+- Native simulation support for PC-based development
+- Comprehensive logging system
+- Automated testing framework
+- In-hardware debugging capabilities
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -141,10 +235,29 @@ To get a local copy up and running follow these simple example steps.
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Build environment setup
-    - [ ] *TBD*
-- [ ] MVP
-    - [ ] *TBD*
+- [x] Build environment setup
+    - [x] Zephyr RTOS integration  
+    - [x] West workspace configuration
+    - [x] Cross-compilation support
+    - [x] Native simulation target
+- [x] Core Foundation
+    - [x] LX200 protocol library implementation
+    - [x] Mount coordinate management (RA/DEC)
+    - [x] Stepper motor driver framework
+    - [x] Board support for MKS Robin Nano
+    - [x] Logging and debugging infrastructure
+- [ ] MVP (In Progress)
+    - [x] Basic mount control interface
+    - [ ] Complete LX200 command set implementation
+    - [ ] Motor calibration and homing
+    - [ ] Real-time telescope tracking
+    - [ ] Hardware-in-the-loop testing
+- [ ] Future Enhancements
+    - [ ] Touch display interface
+    - [ ] Mobile app connectivity
+    - [ ] Custom object tracking (Sun, Moon, ISS, Comets)
+    - [ ] Advanced calibration procedures
+    - [ ] Extended mount type support
 
 See the [open issues](https://github.com/OpenAstroTech/OpenAstroFirmware/issues) for a full list of proposed features (and known issues).
 
