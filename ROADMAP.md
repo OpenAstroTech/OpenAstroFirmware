@@ -29,16 +29,15 @@
 #### 1.1 Complete LX200 Protocol Implementation
 - **Priority: CRITICAL**
 - Implement full command parser and response generator
-- Add error handling and timeout management  
+- Implement the Mount class with a coordinate transformation engine
+- Add error handling and timeout management
 - Support core commands: slewing, positioning, tracking
-- Enable compatibility with SkySafari, Stellarium, ASCOM
+- Implement emergency stop functionality
 
 #### 1.2 Mount Control System
 - **Priority: CRITICAL** 
-- Expand Mount class with coordinate transformation engine
 - Implement RA/DEC to stepper coordinate mapping
 - Add real-time sidereal tracking algorithms
-- Support different mount types (German Equatorial, Fork)
 
 #### 1.3 Stepper Motor Integration
 - **Priority: CRITICAL**
@@ -46,13 +45,14 @@
 - Implement homing and limit switch support
 - Add basic calibration procedures
 - Support TMC2209/TMC5160 drivers on MKS Robin Nano
+- Enable compatibility with SkySafari, Stellarium, ASCOM
 
 #### 1.4 Basic Safety & Control
 - **Priority: HIGH**
-- Implement emergency stop functionality
 - Add software limits and collision detection
 - Basic power management
 - Status monitoring and error reporting
+- Web-based configuration interface
 
 ---
 
@@ -62,7 +62,7 @@
 #### 2.1 Advanced Calibration System
 - **Priority: HIGH**
 - Automated star alignment (1-star, 2-star, 3-star)
-- Polar alignment assistance with drift method
+- Support different mount types (German Equatorial, Fork)
 - Periodic error correction (PEC)
 - Pointing model with atmospheric refraction correction
 
@@ -76,7 +76,6 @@
 #### 2.3 User Interface Development
 - **Priority: MEDIUM**
 - Touch display support (TFT, OLED)
-- Web-based configuration interface
 - Mobile app connectivity (WiFi/BT)
 - Comprehensive diagnostic tools
 
@@ -164,34 +163,6 @@
 - **Mount simulators**: Software models for different mount types
 - **Configuration tools**: GUI-based setup utilities
 - **Testing rigs**: Automated hardware validation
-
----
-
-## 📋 Implementation Priorities
-
-### **Immediate (Next 3 months)**
-1. Complete LX200 protocol implementation
-2. Implement basic coordinate transformation in Mount class
-3. Integrate stepper drivers with mount control
-4. Basic tracking and slewing functionality
-
-### **Short-term (3-6 months)**
-1. Automated calibration procedures
-2. Additional hardware board support
-3. Web-based configuration interface
-4. Comprehensive error handling
-
-### **Medium-term (6-12 months)**
-1. Touch display support
-2. Advanced alignment algorithms
-3. Multiple mount type support
-4. Professional automation features
-
-### **Long-term (12+ months)**
-1. Custom object tracking
-2. Professional ecosystem integration
-3. Community platform development
-4. Commercial-grade reliability
 
 ---
 
