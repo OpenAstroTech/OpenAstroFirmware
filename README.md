@@ -134,7 +134,7 @@ Before getting started, make sure you have a proper Zephyr development environme
 
 1. **Install the Zephyr SDK**: Follow the [official Zephyr getting started guide](https://docs.zephyrproject.org/latest/getting_started/index.html) for your operating system.
 
-2. **Set up Python virtual environment and install West**:
+2. **Set up a Python virtual environment and install West**:
    ```bash
    python3 -m venv ~/.venv
    source ~/.venv/bin/activate
@@ -147,15 +147,15 @@ The first step is to initialize the workspace folder where the `OpenAstroFirmwar
 
 ```bash
 # Initialize workspace for OpenAstroFirmware
-west init -m https://github.com/OpenAstroTech/OpenAstroFirmware --mr main OpenAstroTech-workspace
+west init -m https://github.com/OpenAstroTech/OpenAstroFirmware --mr main OpenAstroFirmware-workspace
 # Update Zephyr modules
-cd OpenAstroTech-workspace
+cd OpenAstroFirmware-workspace
 west update
 ```
 
 After initialization, your workspace structure will look like:
 ```
-OpenAstroTech-workspace/
+OpenAstroFirmware-workspace/
 ├── OpenAstroFirmware/     # This repository
 ├── zephyr/                # Zephyr RTOS
 └── modules/               # Zephyr modules (HAL, libraries, etc.)
@@ -185,13 +185,13 @@ west build -t guiconfig     # GUI configuration tool
 
 #### For Native Simulation (Development/Testing)
 ```bash
-cd OpenAstroTech-workspace/OpenAstroFirmware/app
+cd OpenAstroFirmware-workspace/OpenAstroFirmware/app
 west build -b native_sim
 ```
 
 #### For MKS Robin Nano (Production Hardware)
 ```bash
-cd OpenAstroTech-workspace/OpenAstroFirmware/app  
+cd OpenAstroFirmware-workspace/OpenAstroFirmware/app  
 west build -b mks_robin_nano
 ```
 
