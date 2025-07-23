@@ -262,39 +262,6 @@ The firmware implements the standard LX200 protocol for communication with plane
 
 
 
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Build environment setup
-    - [x] Zephyr RTOS integration  
-    - [x] West workspace configuration
-    - [x] Cross-compilation support
-    - [x] Native simulation target
-- [x] Core Foundation
-    - [ ] LX200 protocol library implementation
-    - [ ] Mount coordinate management (RA/DEC)
-    - [ ] Stepper motor driver framework
-    - [x] Board support for MKS Robin Nano
-    - [x] Logging and debugging infrastructure
-- [ ] MVP (In Progress)
-    - [ ] Basic mount control interface
-    - [ ] Complete LX200 command set implementation
-    - [ ] Motor calibration and homing
-    - [ ] Real-time telescope tracking
-    - [ ] Hardware-in-the-loop testing
-- [ ] Future Enhancements
-    - [ ] Touch display interface
-    - [ ] Mobile app connectivity
-    - [ ] Custom object tracking (Sun, Moon, ISS, Comets)
-    - [ ] Advanced calibration procedures
-    - [ ] Extended mount type support
-
-See the [open issues](https://github.com/OpenAstroTech/OpenAstroFirmware/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
