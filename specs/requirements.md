@@ -222,7 +222,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ### 5.1 Stepper Driver Requirements
 
-**REQ-STEP-001:** The system SHALL support TMC stepper motor controllers (TMC2209, TMC22xx, TMC50xx, TMC51xx series).
+**REQ-STEP-001:** The system SHALL support TMC stepper motor controllers (TMC22xx, TMC50xx, TMC51xx series).
 
 **REQ-STEP-002:** The system SHALL support GPIO-based stepper motor drivers.
 
