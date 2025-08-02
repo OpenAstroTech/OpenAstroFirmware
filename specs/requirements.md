@@ -37,7 +37,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-SYS-002:** The system SHALL support 32-bit microcontroller platforms only.
 
-**REQ-SYS-003:** The system SHALL support I2C communication interface.
+**REQ-SYS-003:** The system SHALL support UART communication interface.
 
 **REQ-SYS-004:** The system SHALL provide native simulation capabilities for development and testing.
 
