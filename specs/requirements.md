@@ -682,7 +682,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ### 18.1 Code Quality Requirements
 
-**REQ-QUAL-001:** The system SHALL follow modern C++ best practices and coding standards.
+**REQ-QUAL-001:** The system SHALL use the C++20 standard, adhere to the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) (or project-specified equivalent), and achieve at least 95% compliance as measured by automated style and static analysis tools (e.g., clang-tidy, cpplint).
 
 **REQ-QUAL-002:** The system SHALL maintain high code quality through automated analysis tools.
 
