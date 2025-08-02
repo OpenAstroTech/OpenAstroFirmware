@@ -676,6 +676,42 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-CFG-008:** The system SHALL persist critical configuration parameters across power cycles.
 
+### 18.3 Non-Volatile Memory Requirements
+
+**REQ-NVM-001:** The system SHALL support EEPROM or equivalent non-volatile memory for persistent data storage.
+
+**REQ-NVM-002:** The system SHALL store all user-configurable settings in non-volatile memory including mount parameters, stepper motor settings, network configuration, and calibration data.
+
+**REQ-NVM-003:** The system SHALL implement a versioned configuration data structure that allows safe migration between firmware versions.
+
+**REQ-NVM-004:** The system SHALL detect configuration version mismatches during boot and perform automatic migration or reset to safe defaults when necessary.
+
+**REQ-NVM-005:** The system SHALL provide configuration backup and validation mechanisms to prevent corruption of critical settings.
+
+**REQ-NVM-006:** The system SHALL support factory reset functionality that restores all settings to safe default values.
+
+**REQ-NVM-007:** The system SHALL implement wear leveling or equivalent mechanisms to extend non-volatile memory lifespan during frequent updates.
+
+**REQ-NVM-008:** The system SHALL validate configuration data integrity using checksums or equivalent error detection methods.
+
+### 18.4 LX200 Configuration Interface Requirements
+
+**REQ-CFG-LX200-001:** The system SHALL support reading configuration parameters through LX200 extended commands (X-family).
+
+**REQ-CFG-LX200-002:** The system SHALL support writing configuration parameters through LX200 extended commands with immediate persistence to non-volatile memory.
+
+**REQ-CFG-LX200-003:** The system SHALL provide LX200 commands to query available configuration parameters and their valid value ranges.
+
+**REQ-CFG-LX200-004:** The system SHALL support configuration parameter validation before writing to non-volatile memory and return appropriate error responses for invalid values.
+
+**REQ-CFG-LX200-005:** The system SHALL provide LX200 commands to perform factory reset operations with appropriate confirmation mechanisms.
+
+**REQ-CFG-LX200-006:** The system SHALL support configuration backup and restore operations through LX200 extended commands.
+
+**REQ-CFG-LX200-007:** The system SHALL provide LX200 commands to query configuration version information and migration status.
+
+**REQ-CFG-LX200-008:** The system SHALL ensure atomic configuration updates through LX200 interface to prevent partial configuration corruption.
+
 ---
 
 ## 19. COMPLIANCE AND STANDARDS
