@@ -106,6 +106,12 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-COM-010:** The system SHALL support command parsing with maximum command length of 32 characters.
 
+### 3.2 Wireless Communication Requirements
+
+**REQ-COM-011:** The system SHOULD support WiFi connectivity for wireless telescope control.
+
+**REQ-COM-012:** The system SHOULD support Bluetooth connectivity for wireless telescope control.
+
 ### 3.3 Extended LX200 Protocol Requirements
 
 **REQ-COM-013:** The system SHALL support OpenAstroTech-specific extended LX200 commands (X-family) for enhanced functionality.
@@ -131,12 +137,6 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 **REQ-COM-023:** The system SHALL support tracking speed adjustment and manual slewing speed control.
 
 **REQ-COM-024:** The system SHALL support mount configuration reporting including hardware capabilities and driver settings.
-
-### 3.2 Wireless Communication Requirements
-
-**REQ-COM-011:** The system SHOULD support WiFi connectivity for wireless telescope control.
-
-**REQ-COM-012:** The system SHOULD support Bluetooth connectivity for wireless telescope control.
 
 ### 3.4 Network Communication Requirements
 
@@ -680,7 +680,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ## 19. COMPLIANCE AND STANDARDS
 
-### 18.1 Code Quality Requirements
+### 19.1 Code Quality Requirements
 
 **REQ-QUAL-001:** The system SHALL use the C++20 standard, adhere to the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) (or project-specified equivalent), and achieve at least 95% compliance as measured by automated style and static analysis tools (e.g., clang-tidy, cpplint).
 
