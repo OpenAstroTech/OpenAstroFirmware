@@ -562,9 +562,69 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ---
 
-## 16. FUTURE EXTENSIBILITY REQUIREMENTS
+## 16. FIRMWARE DISTRIBUTION AND UPDATE REQUIREMENTS
 
-### 16.1 Architecture Requirements
+### 16.1 Firmware Build and Distribution Requirements
+
+**REQ-FW-BUILD-001:** The system SHALL provide automated firmware build processes that generate distributable firmware images for all supported hardware platforms.
+
+**REQ-FW-BUILD-002:** The system SHALL generate firmware images in standard formats suitable for different update mechanisms (binary, hex, signed images).
+
+**REQ-FW-BUILD-003:** The system SHALL provide versioned firmware releases with clear version identification and changelog information.
+
+**REQ-FW-BUILD-004:** The system SHALL support firmware image signing and verification for secure updates.
+
+**REQ-FW-BUILD-005:** The system SHALL provide pre-built firmware images for common hardware configurations through official distribution channels.
+
+### 16.2 Firmware Update Mechanisms Requirements
+
+**REQ-FW-UPDATE-001:** The system SHALL support firmware updates via serial/USB connection for initial installation and recovery scenarios.
+
+**REQ-FW-UPDATE-002:** The system SHOULD support over-the-air (OTA) firmware updates when WiFi connectivity is available.
+
+**REQ-FW-UPDATE-003:** When OTA updates are supported, the system SHALL implement secure firmware download with integrity verification.
+
+**REQ-FW-UPDATE-004:** The system SHALL support firmware update rollback mechanisms to recover from failed updates.
+
+**REQ-FW-UPDATE-005:** The system SHALL maintain bootloader functionality that allows firmware recovery in case of corrupted main firmware.
+
+**REQ-FW-UPDATE-006:** During firmware updates, the system SHALL preserve critical user configuration and calibration data.
+
+### 16.3 Web-Based Configuration Requirements
+
+**REQ-WEB-001:** The system SHOULD provide an embedded web server for device configuration when WiFi is enabled.
+
+**REQ-WEB-002:** When web server is enabled, the system SHALL provide a responsive web user interface accessible through standard web browsers.
+
+**REQ-WEB-003:** The web interface SHALL allow configuration of mount parameters, stepper settings, sensor calibration, and network settings.
+
+**REQ-WEB-004:** The web interface SHALL provide real-time mount status monitoring and control capabilities.
+
+**REQ-WEB-005:** The web interface SHALL support firmware update initiation and progress monitoring.
+
+**REQ-WEB-006:** The web interface SHALL implement secure authentication to prevent unauthorized access to mount control and configuration.
+
+**REQ-WEB-007:** The web interface SHALL provide configuration backup and restore functionality.
+
+**REQ-WEB-008:** The web interface SHALL support configuration of LX200 protocol settings and extended command features.
+
+### 16.4 User Experience Requirements
+
+**REQ-UX-001:** The system SHALL provide clear documentation and guides for firmware installation and updates.
+
+**REQ-UX-002:** The system SHALL provide user-friendly tools or scripts to simplify the firmware update process for non-technical users.
+
+**REQ-UX-003:** The system SHALL provide clear status indicators and progress feedback during firmware update operations.
+
+**REQ-UX-004:** The system SHALL implement graceful error handling and recovery procedures for failed update attempts.
+
+**REQ-UX-005:** The system SHALL provide automated update notification mechanisms when new firmware versions are available.
+
+---
+
+## 17. FUTURE EXTENSIBILITY REQUIREMENTS
+
+### 17.1 Architecture Requirements
 
 **REQ-EXT-001:** The system SHALL provide modular architecture for easy feature addition.
 
@@ -578,7 +638,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-EXT-012:** The system SHALL provide extensible sensor framework with well-defined interfaces for adding new sensor types and capabilities.
 
-### 16.2 Advanced Feature Support
+### 17.2 Advanced Feature Support
 
 **REQ-EXT-004:** The system architecture SHALL support future implementation of custom object tracking (Sun, Moon, ISS, comets).
 
@@ -594,9 +654,9 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ---
 
-## 17. CONFIGURATION REQUIREMENTS
+## 18. CONFIGURATION REQUIREMENTS
 
-### 17.1 Build Configuration Requirements
+### 18.1 Build Configuration Requirements
 
 **REQ-CFG-001:** The system SHALL use Zephyr's Kconfig system for configuration management.
 
@@ -606,7 +666,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-CFG-004:** The system SHALL provide interactive configuration menu (menuconfig).
 
-### 17.2 Runtime Configuration Requirements
+### 18.2 Runtime Configuration Requirements
 
 **REQ-CFG-005:** The system SHALL support runtime configuration of tracking rates.
 
@@ -618,7 +678,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ---
 
-## 18. COMPLIANCE AND STANDARDS
+## 19. COMPLIANCE AND STANDARDS
 
 ### 18.1 Code Quality Requirements
 
@@ -630,7 +690,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-QUAL-004:** The system SHALL maintain comprehensive documentation for all public APIs.
 
-### 18.2 Protocol Compliance Requirements
+### 19.2 Protocol Compliance Requirements
 
 **REQ-COMP-001:** The system SHALL fully comply with the Meade LX200 command protocol specification.
 
@@ -640,7 +700,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ---
 
-## 19. REVISION HISTORY
+## 20. REVISION HISTORY
 
 | Version | Date | Author | Description |
 |---------|------|--------|-------------|
