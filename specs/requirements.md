@@ -33,7 +33,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ### 2.1 Platform Requirements
 
-**REQ-SYS-001:** The system SHALL be built on Zephyr RTOS version 3.0 or later.
+**REQ-SYS-001:** The system SHALL be built on Zephyr RTOS version 4.1.0.
 
 **REQ-SYS-002:** The system SHALL support 32-bit microcontroller platforms only.
 
