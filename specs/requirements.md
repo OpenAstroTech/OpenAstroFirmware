@@ -434,7 +434,7 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ---
 
-## 11. USER INTERFACE REQUIREMENTS
+## 11. DISPLAY REQUIREMENTS
 
 ### 11.1 Display Support Requirements
 
@@ -443,28 +443,6 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 **REQ-UI-002:** The system SHOULD support LCD screens (small, large, color, monochrome).
 
 **REQ-UI-003:** When display is present, the system SHOULD provide mount status information display.
-
-### 11.2 Input Device Requirements
-
-**REQ-UI-004:** The system SHOULD support button input devices.
-
-**REQ-UI-005:** The system SHOULD support joystick input devices.
-
-**REQ-UI-006:** The system SHOULD support rotary encoder with button input devices.
-
-**REQ-UI-007:** The system SHOULD support touch screen input devices.
-
-### 11.3 Interactive Operations Requirements
-
-**REQ-UI-008:** When interactive input devices are present, the system SHOULD support manual axis movement in any direction at various speeds.
-
-**REQ-UI-009:** When interactive input devices are present, the system SHOULD support starting and stopping tracking.
-
-**REQ-UI-010:** When interactive input devices are present, the system SHOULD support finding home position.
-
-**REQ-UI-011:** When interactive input devices are present, the system SHOULD support going to home position.
-
-**REQ-UI-012:** When interactive input devices are present, the system SHOULD support entering target coordinates and initiating slews.
 
 ---
 

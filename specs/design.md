@@ -108,7 +108,7 @@ The architecture is shaped by the following key requirements and constraints:
 
 ### 3.1 Presentation Layer Architecture
 
-*Addresses Requirements: REQ-COM-001 to REQ-COM-024, REQ-WEB-001 to REQ-WEB-008, REQ-UI-001 to REQ-UI-012*
+*Addresses Requirements: REQ-COM-001 to REQ-COM-024, REQ-WEB-001 to REQ-WEB-008, REQ-UI-001 to REQ-UI-003*
 
 The presentation layer provides external interfaces and manages all communication with external systems and users.
 
