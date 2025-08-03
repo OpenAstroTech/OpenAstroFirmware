@@ -520,27 +520,18 @@
 ---
 
 ## EPIC 7: User Interface & Web Systems
-*Display support, user input, and web-based control interface*
+*Display support and web-based control interface*
 
-### 7.1 Display & Input Device Support
+### 7.1 Display Support
 **🟡 priority:medium**  
-**Requirements:** REQ-UI-001, REQ-UI-002, REQ-UI-003, REQ-UI-004, REQ-UI-005, REQ-UI-006, REQ-UI-007, REQ-UI-008, REQ-UI-009, REQ-UI-010, REQ-UI-011, REQ-UI-012
+**Requirements:** REQ-UI-001, REQ-UI-002, REQ-UI-003
 
-**Description:** Implement comprehensive user interface support for displays and input devices.
+**Description:** Implement display support for mount status visualization without interactive input capabilities.
 
 **Acceptance Criteria:**
 - [ ] **REQ-UI-001**: Information-only displays supported for mount status visualization
 - [ ] **REQ-UI-002**: LCD screens supported (small, large, color, monochrome)
-- [ ] **REQ-UI-003**: When display present, mount status information display provided
-- [ ] **REQ-UI-004**: Button input devices supported
-- [ ] **REQ-UI-005**: Joystick input devices supported
-- [ ] **REQ-UI-006**: Rotary encoder with button input devices supported
-- [ ] **REQ-UI-007**: Touch screen input devices supported
-- [ ] **REQ-UI-008**: When interactive input devices present, manual axis movement in any direction at various speeds supported
-- [ ] **REQ-UI-009**: When interactive input devices present, starting and stopping tracking supported
-- [ ] **REQ-UI-010**: When interactive input devices present, finding home position supported
-- [ ] **REQ-UI-011**: When interactive input devices present, going to home position supported
-- [ ] **REQ-UI-012**: When interactive input devices present, entering target coordinates and initiating slews supported
+- [ ] **REQ-UI-003**: Mount status information display provided when display present
 
 **Dependencies:** EPIC 1 (Platform Foundation), EPIC 4 (Mount Control), EPIC 5 (Configuration)  
 
