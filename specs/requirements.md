@@ -39,13 +39,11 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-SYS-003:** The system SHALL support UART communication interface.
 
-**REQ-SYS-004:** The system SHALL provide native simulation capabilities for development and testing.
-
 ### 2.2 Hardware Platform Requirements
 
 **REQ-HW-001:** The system SHALL support MKS Robin Nano (STM32F407xx-based) as the primary hardware platform.
 
-**REQ-HW-002:** The system SHALL support native_sim platform for development and testing.
+**REQ-HW-002:** The system SHALL provide native simulation capabilities for development and testing, and SHALL support the Zephyr native_sim platform to enable these capabilities.
 
 **REQ-HW-003:** The system SHALL support STM32F407xx microcontroller family.
 

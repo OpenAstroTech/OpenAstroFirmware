@@ -18,7 +18,7 @@
 
 ### 1.1 Zephyr RTOS Platform Setup
 **🔴 priority:critical**  
-**Requirements:** REQ-SYS-001, REQ-SYS-002, REQ-SYS-003, REQ-SYS-004, REQ-HW-001, REQ-HW-002, REQ-HW-003
+**Requirements:** REQ-SYS-001, REQ-SYS-002, REQ-SYS-003, REQ-HW-001, REQ-HW-002, REQ-HW-003
 
 **Description:** Establish the foundational Zephyr RTOS platform with primary hardware support and development environment.
 
@@ -26,7 +26,6 @@
 - [ ] **REQ-SYS-001**: Zephyr RTOS version 4.2.0 integration functional
 - [ ] **REQ-SYS-002**: 32-bit microcontroller platform support verified
 - [ ] **REQ-SYS-003**: UART communication interface operational
-- [ ] **REQ-SYS-004**: Native simulation capabilities implemented for development/testing
 - [ ] **REQ-HW-001**: MKS Robin Nano (STM32F407xx) board support functional  
 - [ ] **REQ-HW-002**: native_sim platform support for development/testing
 - [ ] **REQ-HW-003**: STM32F407xx microcontroller family support verified
