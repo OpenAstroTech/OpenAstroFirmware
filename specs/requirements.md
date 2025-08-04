@@ -45,8 +45,6 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 **REQ-HW-002:** The system SHALL provide native simulation capabilities for development and testing, and SHALL support the Zephyr native_sim platform to enable these capabilities.
 
-**REQ-HW-003:** The system SHALL support STM32F407xx microcontroller family.
-
 **REQ-HW-004:** When multiple hardware variations are present, the system SHALL support all variations through compile-time configuration.
 
 ### 2.3 Hardware Extensibility Requirements
