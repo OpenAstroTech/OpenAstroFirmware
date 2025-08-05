@@ -110,46 +110,32 @@ To get started with OpenAstroFirmware development or to build and deploy the fir
 ### Supported hardware
 
 - **MKS Robin Nano** (STM32F407xx-based controller board) - Production target
+- Way more 32 bit boards to come
 - **native_sim** - Development and testing platform
-- STM32F407xx microcontroller family support
 - Stepper motor drivers:
   - TMC stepper motor controllers
-  - GPIO-based stepper motor drivers  
+  - GPIO-based stepper motor drivers
   - Testing/simulation drivers for development
 
 ### Development Environment Setup
 
 Before getting started, make sure you have a proper Zephyr development environment. Follow the official [Zephyr Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html).
 
-#### Prerequisites
-
-- **Zephyr SDK** - Required for cross-compilation and board support
-- **West** - Zephyr's meta-tool for project management and building
-- **CMake** (version 3.20.0 or higher) - Build system
-- **Ninja** - Fast build tool
-- **Python 3** (with pip) - For build scripts and utilities
-- **Git** - For version control and West manifest management
-
-#### Installation
-
-1. **Install the Zephyr SDK**: Follow the [official Zephyr getting started guide](https://docs.zephyrproject.org/latest/getting_started/index.html) for your operating system.
-
-2. **Set up a Python virtual environment and install West**:
-   ```bash
-   python3 -m venv ~/.venv
-   source ~/.venv/bin/activate
-   pip install west
-   ```
-
 #### Workspace Initialization
 
 The first step is to initialize the workspace folder where the `OpenAstroFirmware` and all Zephyr modules will be cloned. Run the following command:
 
 ```bash
-# Initialize workspace for OpenAstroFirmware
-west init -m https://github.com/OpenAstroTech/OpenAstroFirmware --mr main OpenAstroFirmware-workspace
-# Update Zephyr modules
+# Create workspace directory
+mkdir OpenAstroFirmware-workspace
+
+# Change to the workspace directory
 cd OpenAstroFirmware-workspace
+
+# Initialize workspace for OpenAstroFirmware
+west init -m https://github.com/OpenAstroTech/OpenAstroFirmware --mr main .
+
+# Update Zephyr modules
 west update
 ```
 
@@ -163,22 +149,7 @@ OpenAstroFirmware-workspace/
 
 **Important**: Remember to activate your Python virtual environment each time you start working on the project:
 ```bash
-source ~/.venv/bin/activate
-```
-
-### Configuration
-
-The firmware uses Zephyr's Kconfig system for configuration. Key configuration files:
-
-- `app/prj.conf` - Main project configuration
-- `app/boards/native_sim.conf` - Native simulator specific settings  
-- `app/boards/native_sim.overlay` - Device tree overlay for simulation
-- Board-specific configurations in `boards/` directory
-
-Configuration can be modified using:
-```bash
-west build -t menuconfig    # Interactive configuration menu
-west build -t guiconfig     # GUI configuration tool
+source ~/zephyrproject/.venv/bin/activate
 ```
 
 ### Build
@@ -192,7 +163,7 @@ west build -b native_sim
 #### For MKS Robin Nano (Production Hardware)
 ```bash
 cd OpenAstroFirmware-workspace/OpenAstroFirmware/app  
-west build -b mks_robin_nano
+west build -b robin_nano
 ```
 
 #### Clean Build
@@ -202,9 +173,24 @@ west build -b <board_name> # Rebuild from scratch
 ```
 
 The build system supports:
-- Cross-compilation for STM32F407xx targets
+- Cross-compilation for hardware targets
 - Native compilation for PC-based testing
 - Comprehensive testing with automated test suites
+
+### Configuration
+
+The firmware uses Zephyr's Kconfig system for configuration. It requires an existing build directory. Key configuration files:
+
+- `app/prj.conf` - Main project configuration
+- `app/boards/native_sim.conf` - Native simulator specific settings  
+- `app/boards/native_sim.overlay` - Device tree overlay for simulation
+- Board-specific configurations in `boards/` directory
+
+Configuration can be modified using:
+```bash
+west build -t menuconfig    # Interactive configuration menu
+west build -t guiconfig     # GUI configuration tool
+```
 
 ### Upload
 
@@ -241,15 +227,16 @@ OpenAstroFirmware provides telescope mount control with the following capabiliti
 
 ### LX200 Command Interface
 The firmware implements the standard LX200 protocol for communication with planetarium software like:
-- SkySafari
-- Stellarium  
-- TheSkyX
-- Cartes du Ciel
-- Any ASCOM-compatible software
+- [OATControl](https://github.com/OpenAstroTech/OpenAstroTracker-Desktop)
+- [INDI](https://indilib.org)
+- [ASCOM](https://ascom-standards.org)
+- [SkySafari](https://skysafariastronomy.com)
+- [Stellarium](https://stellarium.org)
+- Any ASCOM or INDI compatible software
 
 ### Hardware Control
 - Stepper motor drivers (TMC, GPIO-based)
-- STM32F407xx microcontroller support
+- 32 bit microcontroller support (see official [Zephyr documentation for supported boards](https://docs.zephyrproject.org/latest/boards/))
 - Extensible driver architecture for additional hardware components
 
 ### Development and Testing
@@ -283,7 +270,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the MIT License. See [`LICENSE`](https://github.com/OpenAstroTech/OpenAstroFirmware/blob/main/LICENSE) for more information.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -292,7 +279,9 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [https://github.com/OpenAstroTech/OpenAstroFirmware](https://github.com/OpenAstroTech/OpenAstroFirmware)
+GitHub: [OpenAstroFirmware](https://github.com/OpenAstroTech/OpenAstroFirmware)
+
+Project Discord: [OpenAstroTech Discord](https://discord.gg/pzGaJztdAD)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
