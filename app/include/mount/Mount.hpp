@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OPEN_ASTRO_FIRMWARE_MOUNT_MOUNT_HPP
+#define OPEN_ASTRO_FIRMWARE_MOUNT_MOUNT_HPP
 
 #include <inttypes.h>
 
@@ -35,3 +36,5 @@ public:
      */
     bool setTargetRa(unsigned int h, unsigned int m, unsigned int s);
 };
+
+#endif

@@ -7,4 +7,8 @@ config MOUNT_THREAD_STACK_SIZE
         The size of the stack used by the mount thread.
         The default value is 0x4000 bytes (16kB).
 
+module = MOUNT
+module-str = mount
+source "subsys/logging/Kconfig.template.log_config"
+
 endmenu
