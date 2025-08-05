@@ -2,7 +2,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(Mount);
+LOG_MODULE_REGISTER(Mount, CONFIG_MOUNT_LOG_LEVEL);
 
 Mount::Mount() {
     LOG_DBG("creating Mount");
