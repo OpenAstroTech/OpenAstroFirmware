@@ -20,6 +20,32 @@ This is firmware for DIY astronomical telescope mounts, built on Zephyr RTOS v4.
 
 ## Development Workflow
 
+### Python Virtual Environment Setup
+This project uses Python tools for development and testing. A virtual environment is recommended:
+```bash
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+
+# Install Zephyr SDK and development dependencies
+pip install west
+pip install -r zephyr/scripts/requirements.txt
+```
+
+**Note**: `.venv/` directory is gitignored and contains Python packages for:
+- `west` - Zephyr workspace management tool
+- `devicetree` - Device tree compiler and tools
+- `ply` - Python parsing library for Kconfig
+- Development and testing utilities
+
+### Load virtual Environment (needed for each terminal session)
+```bash
+# Activate the virtual environment
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+```
+
 ### West Workspace Setup (Required)
 This project uses west workspace management. Must be initialized properly:
 ```bash
