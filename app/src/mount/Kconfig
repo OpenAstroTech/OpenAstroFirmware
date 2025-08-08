@@ -1,4 +1,8 @@
-menu "Mount"
+menuconfig MOUNT
+    bool "Mount"
+    default y
+
+if MOUNT
 
 config MOUNT_THREAD_STACK_SIZE
     hex "Mount stack size"
@@ -11,4 +15,4 @@ module = MOUNT
 module-str = mount
 source "subsys/logging/Kconfig.template.log_config"
 
-endmenu
+endif
