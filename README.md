@@ -126,6 +126,9 @@ Before getting started, make sure you have a proper Zephyr development environme
 The first step is to initialize the workspace folder where the `OpenAstroFirmware` and all Zephyr modules will be cloned. Run the following command:
 
 ```bash
+# activate zephyr virtual environment containing west
+source ~/zephyrproject/.venv/bin/activate
+
 # Create workspace directory
 mkdir OpenAstroFirmware-workspace
 
