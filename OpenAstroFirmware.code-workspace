@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"cmake.configureOnOpen": false,
+		"terminal.integrated.cwd": "${workspaceFolder:OpenAstroFirmware}",
+		"terminal.integrated.defaultProfile.linux": "zsh"
+	}
+}
