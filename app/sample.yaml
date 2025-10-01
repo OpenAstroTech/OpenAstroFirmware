@@ -8,6 +8,7 @@ common:
   build_only: true
   integration_platforms:
     - robin_nano
+    - robin_e3
     - native_sim
 tests:
   app.default: {}

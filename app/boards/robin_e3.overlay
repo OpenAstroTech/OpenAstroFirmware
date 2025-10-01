@@ -1,0 +1,133 @@
+/ {
+    chosen {
+        // Console and control interfaces
+        zephyr,console = &usart3; 
+        oaf,uart-control = &cdc_acm_uart0;
+        
+        // OpenAstroFirmware specific device mappings
+        oaf,ra-stepper-step = &ra_step;
+        oaf,ra-stepper-dir = &ra_dir;
+        oaf,ra-stepper-en = &ra_en;
+        oaf,dec-stepper-step = &dec_step;
+        oaf,dec-stepper-dir = &dec_dir;
+        oaf,dec-stepper-en = &dec_en;
+        oaf,alt-stepper-step = &alt_step;
+        oaf,alt-stepper-dir = &alt_dir;
+        oaf,alt-stepper-en = &alt_en;
+        oaf,az-stepper-step = &az_step;
+        oaf,az-stepper-dir = &az_dir;
+        oaf,az-stepper-en = &az_en;
+        oaf,focus-stepper-step = &focus_step;
+        oaf,focus-stepper-dir = &focus_dir;
+        oaf,focus-stepper-en = &focus_en;
+        
+        // Sensor mappings
+        oaf,ra-home-sensor = &ra_homing;
+        oaf,dec-home-sensor = &dec_homing;
+        oaf,ra-endstop-east = &ra_endstop_east;
+        oaf,dec-endstop-up = &dec_endstop_up;
+        
+        // Heater/PWM mappings
+        oaf,dew-heater-1 = &dew_heater1;
+        oaf,dew-heater-2 = &dew_heater2;
+        
+        // Communication interfaces
+        oaf,gps-uart = &usart1;
+        oaf,tmc-spi = &spi1;
+        oaf,external-i2c = &i2c1;
+        
+        // Status LED
+        oaf,status-led = &status_led;
+    };
+
+    /* Mount Control Configuration */
+    mount_controller {
+        compatible = "oaf,mount-controller";
+        
+        /* RA Axis Configuration */
+        ra-axis {
+            step-gpio = <&ra_step>;
+            dir-gpio = <&ra_dir>;
+            enable-gpio = <&ra_en>;
+            diag-gpio = <&ra_diag>;
+            home-sensor = <&ra_homing>;
+            endstop-east = <&ra_endstop_east>;
+            
+            steps-per-revolution = <3200>;
+            gear-ratio = <144>;
+            max-speed = <1000>;
+            acceleration = <500>;
+        };
+        
+        /* DEC Axis Configuration */
+        dec-axis {
+            step-gpio = <&dec_step>;
+            dir-gpio = <&dec_dir>;
+            enable-gpio = <&dec_en>;
+            diag-gpio = <&dec_diag>;
+            home-sensor = <&dec_homing>;
+            endstop-up = <&dec_endstop_up>;
+            
+            steps-per-revolution = <3200>;
+            gear-ratio = <54>;
+            max-speed = <1000>;
+            acceleration = <500>;
+        };
+        
+        /* Focus/Alt Configuration */
+        focus-axis {
+            step-gpio = <&focus_step>;
+            dir-gpio = <&focus_dir>;
+            enable-gpio = <&focus_en>;
+            diag-gpio = <&focus_diag>;
+            
+            steps-per-revolution = <3200>;
+            max-speed = <500>;
+            acceleration = <250>;
+        };
+        
+        status = "okay";
+    };
+
+    /* TMC Driver Configuration */
+    tmc_drivers {
+        compatible = "oaf,tmc-drivers";
+        
+        ra-driver {
+            spi-device = <&tmc_ra>;
+            address = <0>;
+            current-ma = <1500>;
+            microsteps = <16>;
+            stealthchop = <1>;
+        };
+        
+        status = "okay";
+    };
+};
+
+// Configuration for the CDC ACM UART
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
+// GPS UART configuration
+&usart1 {
+    current-speed = <9600>;
+    status = "okay";
+};
+
+// Additional ADC channel for LCD keypad
+&adc1 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    
+    channel@10 {
+        reg = <10>;
+        zephyr,gain = "ADC_GAIN_1";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <12>;
+    };
+};
