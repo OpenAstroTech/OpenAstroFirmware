@@ -1,0 +1,13 @@
+identifier: robin_e3
+name: Robin E3
+vendor: mks
+type: mcu
+arch: arm
+ram: 48
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
