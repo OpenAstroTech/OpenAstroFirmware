@@ -1,0 +1,244 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f1/stm32f103Xe.dtsi>
+#include <st/f1/stm32f103r(c-d-e)tx-pinctrl.dtsi>
+ 
+
+/ {
+	model = "MKS Robin E3 board";
+	compatible = "mks,robin_e3";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		tf_led: led_0 {
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+			label = "TF Card detection LED";
+		};
+		status_led: status_led {
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
+		};
+	};
+
+	/* Stepper Motor GPIO Definitions */
+	steppers {
+		compatible = "gpio-steppers";
+		
+		/* RA (Right Ascension) Stepper - X Axis */
+		ra_step: ra_step {
+			gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
+			label = "RA Stepper Step";
+		};
+		ra_dir: ra_dir {
+			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+			label = "RA Stepper Direction";
+		};
+		ra_en: ra_en {
+			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+			label = "RA Stepper Enable";
+		};
+		ra_diag: ra_diag {
+			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+			label = "RA Stepper Diag";
+		};
+
+		/* DEC (Declination) Stepper - Y Axis */
+		dec_step: dec_step {
+			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+			label = "DEC Stepper Step";
+		};
+		dec_dir: dec_dir {
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			label = "DEC Stepper Direction";
+		};
+		dec_en: dec_en {
+			gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+			label = "DEC Stepper Enable";
+		};
+		dec_diag: dec_diag {
+			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+			label = "DEC Stepper Diag";
+		};
+
+		/* ALT (Altitude) Stepper - Z Axis */
+		alt_step: alt_step {
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+			label = "ALT Stepper Step";
+		};
+		alt_dir: alt_dir {
+			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+			label = "ALT Stepper Direction";
+		};
+		alt_en: alt_en {
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+			label = "ALT Stepper Enable";
+		};
+		alt_diag: alt_diag {
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			label = "ALT Stepper Diag";
+		};
+
+		/* AZ (Azimuth) Stepper - E0 */
+		az_step: az_step {
+			gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+			label = "AZ Stepper Step";
+		};
+		az_dir: az_dir {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "AZ Stepper Direction";
+		};
+		az_en: az_en {
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+			label = "AZ Stepper Enable";
+		};
+		az_diag: az_diag {
+			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+			label = "AZ Stepper Diag";
+		};
+
+		/* Focus Stepper - E1 */
+		focus_step: focus_step {
+			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+			label = "Focus Stepper Step";
+		};
+		focus_dir: focus_dir {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "Focus Stepper Direction";
+		};
+		focus_en: focus_en {
+			gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+			label = "Focus Stepper Enable";
+		};
+		focus_diag: focus_diag {
+			gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			label = "Focus Stepper Diag";
+		};
+	};
+
+	/* Endstops and Sensors */
+	sensors {
+		compatible = "gpio-keys";
+		
+		ra_homing: ra_homing {
+			gpios = <&gpioa 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "RA Homing Sensor";
+		};
+		dec_homing: dec_homing {
+			gpios = <&gpioa 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "DEC Homing Sensor";
+		};
+		ra_endstop_east: ra_endstop_east {
+			gpios = <&gpioa 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "RA East Endstop";
+		};
+		dec_endstop_up: dec_endstop_up {
+			gpios = <&gpioa 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "DEC Up Endstop";
+		};
+	};
+
+	aliases {
+		led0 = &tf_led;
+		led1 = &status_led;
+		ra-step = &ra_step;
+		ra-dir = &ra_dir;
+		ra-en = &ra_en;
+		dec-step = &dec_step;
+		dec-dir = &dec_dir;
+		dec-en = &dec_en;
+		alt-step = &alt_step;
+		alt-dir = &alt_dir;
+		alt-en = &alt_en;
+		az-step = &az_step;
+		az-dir = &az_dir;
+		az-en = &az_en;
+		focus-step = &focus_step;
+		focus-dir = &focus_dir;
+		focus-en = &focus_en;
+		ra-home = &ra_homing;
+		dec-home = &dec_homing;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+
+/* I2C for external devices */
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+/* ADC for analog sensors (LCD keypad, etc.) */
+&adc1 {
+	pinctrl-0 = <&adc1_in10_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
