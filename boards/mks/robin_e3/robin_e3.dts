@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /dts-v1/;
- #include <st/f1/stm32f103Xc.dtsi>
- #include <st/f1/stm32f103rctx-pinctrl.dtsi>
+/dts-v1/;
+#include <st/f1/stm32f103Xe.dtsi>
+#include <st/f1/stm32f103r(c-d-e)tx-pinctrl.dtsi>
+ 
 
 / {
 	model = "MKS Robin E3 board";
@@ -147,33 +148,6 @@
 		};
 	};
 
-	/* Heater/PWM Outputs */
-	heaters {
-		compatible = "pwm-leds";
-		dew_heater1: dew_heater1 {
-			pwms = <&pwm_tim3 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
-			label = "Dew Heater 1";
-		};
-		dew_heater2: dew_heater2 {
-			pwms = <&pwm_tim3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
-			label = "Dew Heater 2";
-		};
-	};
-
-	/* LCD Display */
-	lcd_display {
-		compatible = "hit,hd44780";
-		data-bus-width = <4>;
-		enable-gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
-		rs-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
-		data-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>,
-			     <&gpioc 7 GPIO_ACTIVE_HIGH>,
-			     <&gpioc 9 GPIO_ACTIVE_HIGH>,
-			     <&gpioc 11 GPIO_ACTIVE_HIGH>;
-		display-width = <16>;
-		display-height = <2>;
-	};
-
 	aliases {
 		led0 = &tf_led;
 		led1 = &status_led;
@@ -194,8 +168,6 @@
 		focus-en = &focus_en;
 		ra-home = &ra_homing;
 		dec-home = &dec_homing;
-		heater1 = &dew_heater1;
-		heater2 = &dew_heater2;
 	};
 };
 
@@ -255,35 +227,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
-/* PWM Timer for heater control */
-&timers3 {
-	status = "okay";
-	
-	pwm_tim3: pwm {
-		status = "okay";
-		pinctrl-0 = <&tim3_ch1_pb0 &tim3_ch2_pb1>;
-		pinctrl-names = "default";
-	};
-};
-
-/* SPI for TMC stepper drivers (if using SPI mode) */
-&spi1 {
-	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
-	pinctrl-names = "default";
-	status = "okay";
-	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
-
-	tmc_ra: tmc5160@0 {
-		compatible = "trinamic,tmc5160";
-		reg = <0>;
-		spi-max-frequency = <1000000>;
-		label = "TMC_RA";
-	};
-};
 
 /* I2C for external devices */
 &i2c1 {
-	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;

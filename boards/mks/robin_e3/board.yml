@@ -2,4 +2,4 @@ board:
   name: robin_e3
   vendor: mks
   socs:
-    - name: stm32f103xx
+    - name: stm32f103xe
