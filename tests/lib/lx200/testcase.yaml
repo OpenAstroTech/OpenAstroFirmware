@@ -4,6 +4,7 @@ common:
     - telescope
     - protocol
     - parser
+    - cpp20
   timeout: 60
   integration_platforms:
     - robin_nano
@@ -15,4 +16,33 @@ common:
     - robin_nano
 
 tests:
-  lib.lx200: {}
+  # C++20 LX200 Parser Tests
+  lib.lx200.parser:
+    tags:
+      - parser
+      - state_machine
+    extra_configs:
+      - CONFIG_LX200=y
+      - CONFIG_LX200_LOG_LEVEL_DBG=y
+  
+  lib.lx200.coordinates:
+    tags:
+      - coordinates
+      - parsing
+    extra_configs:
+      - CONFIG_LX200=y
+  
+  lib.lx200.commands:
+    tags:
+      - commands
+      - command_families
+    extra_configs:
+      - CONFIG_LX200=y
+  
+  lib.lx200.integration:
+    tags:
+      - integration
+      - end_to_end
+    extra_configs:
+      - CONFIG_LX200=y
+    min_ram: 32
