@@ -9,7 +9,14 @@
 	],
 	"settings": {
 		"cmake.configureOnOpen": false,
+		"C_Cpp.default.compileCommands": [
+			"build/compile_commands.json"
+		],
 		"terminal.integrated.cwd": "${workspaceFolder:OpenAstroFirmware}",
-		"terminal.integrated.defaultProfile.linux": "zsh"
+		"terminal.integrated.defaultProfile.linux": "zsh",
+		"files.associations": {
+			"string_view": "cpp",
+			"array": "cpp"
+		}
 	}
 }

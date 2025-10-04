@@ -19,13 +19,16 @@ OpenAstroFirmware SHALL provide telescope mount control capabilities including:
 
 ### 1.3 Definitions and Acronyms
 - **RA**: Right Ascension
-- **DEC**: Declination  
+- **DEC**: Declination
+- **ALT**: Altitude
+- **AZ**: Azimuth
 - **LX200**: Meade telescope serial communication protocol
 - **RTOS**: Real-Time Operating System
 - **TMC**: Trinamic stepper motor controller
 - **OAT**: OpenAstroTracker
 - **OAM**: OpenAstroMount
-- **EARS**: Easy Approach to Requirements Syntax
+- **OAE**: OpenAstroExplorer
+- **OAF**: OpenAstroFirmware
 
 ---
 
