@@ -1,0 +1,169 @@
+/*
+ * Copyright (c) 2025, OpenAstroTech
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <lx200/lx200.hpp>
+#include <cstring>
+
+namespace lx200 {
+
+/* ========================================================================
+ * ParserState Implementation
+ * ======================================================================== */
+
+ParserState::ParserState() noexcept
+    : buffer_{}
+    , buffer_length_{0}
+    , command_complete_{false}
+    , precision_{PrecisionMode::High}
+{
+}
+
+void ParserState::reset() noexcept
+{
+    buffer_length_ = 0;
+    command_complete_ = false;
+    // Note: precision_ is NOT reset - it persists across commands
+}
+
+ParseResult ParserState::feed_character(char c) noexcept
+{
+    // Check for buffer overflow
+    if (buffer_length_ >= MAX_COMMAND_LENGTH) {
+        return ParseResult::ErrorBufferFull;
+    }
+    
+    // First character must be ':'
+    if (buffer_length_ == 0) {
+        if (c != ':') {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        buffer_[buffer_length_++] = c;
+        return ParseResult::Incomplete;
+    }
+    
+    // Check for command terminator
+    if (c == '#') {
+        // Empty command (just ":#") is invalid
+        if (buffer_length_ == 1) {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        
+        buffer_[buffer_length_++] = c;
+        command_complete_ = true;
+        return ParseResult::Success;
+    }
+    
+    // Accumulate character
+    buffer_[buffer_length_++] = c;
+    return ParseResult::Incomplete;
+}
+
+bool ParserState::is_command_ready() const noexcept
+{
+    return command_complete_;
+}
+
+std::optional<Command> ParserState::get_command() noexcept
+{
+    if (!command_complete_) {
+        return std::nullopt;
+    }
+    
+    // Extract command string (skip ':' prefix and '#' terminator)
+    std::string_view full_command(buffer_.data() + 1, buffer_length_ - 2);
+    
+    // Split into name and parameters
+    std::string_view name, params;
+    parse_command_parts(name, params);
+    
+    // Identify command family
+    CommandFamily family = identify_family(name.empty() ? '\0' : name[0]);
+    
+    // Create command
+    Command cmd{
+        .family = family,
+        .name = name,
+        .parameters = params
+    };
+    
+    // Reset for next command (but preserve precision)
+    reset();
+    
+    return cmd;
+}
+
+CommandFamily ParserState::identify_family(char first_char) const noexcept
+{
+    // Direct character-to-family mapping
+    switch (first_char) {
+        case 'A': return CommandFamily::Alignment;
+        case 'B': return CommandFamily::Backup;
+        case 'C': return CommandFamily::DateTime;
+        case 'D': return CommandFamily::Distance;
+        case 'F': return CommandFamily::Focus;
+        case 'G': return CommandFamily::GetInfo;
+        case 'g': return CommandFamily::GPS;
+        case 'h': return CommandFamily::Home;
+        case 'H': return CommandFamily::Home;  // Hour angle also maps to Home
+        case 'I': return CommandFamily::Initialize;
+        case 'L': return CommandFamily::Library;
+        case 'M': return CommandFamily::Movement;
+        case 'P': return CommandFamily::Precision;
+        case 'Q': return CommandFamily::Quit;
+        case 'R': return CommandFamily::Rate;
+        case 'S': return CommandFamily::SetInfo;
+        case 'T': return CommandFamily::Tracking;
+        case 'U': return CommandFamily::User;
+        case 'X': return CommandFamily::Extended;
+        default:  return CommandFamily::Unknown;
+    }
+}
+
+void ParserState::parse_command_parts(std::string_view& name, std::string_view& params) const noexcept
+{
+    // Get full command (excluding ':' and '#')
+    std::string_view full_command(buffer_.data() + 1, buffer_length_ - 2);
+    
+    if (full_command.empty()) {
+        name = std::string_view{};
+        params = std::string_view{};
+        return;
+    }
+    
+    // Commands with parameters are typically 2 characters followed by data
+    // Examples: :Sr12:34:56#, :Sd+45*30:15#, :SC03/15/23#
+    // Commands without parameters: :GR#, :MS#, :Q#
+    
+    // Heuristic: If command is longer than 2 chars and first char is 'S',
+    // it likely has parameters (SetInfo commands)
+    // Also handles other commands with parameters
+    
+    if (full_command.length() > 2) {
+        char first = full_command[0];
+        
+        // SetInfo commands have parameters after 2-char name
+        if (first == 'S') {
+            name = full_command.substr(0, 2);
+            params = full_command.substr(2);
+            return;
+        }
+        
+        // Some other commands have parameters too
+        // For now, assume 2-char commands, rest is parameters
+        // This can be refined based on command-specific rules
+        if (full_command.length() > 2 && 
+            (first == 'R' || first == 'T' || first == 'F' || first == 'B')) {
+            name = full_command.substr(0, 2);
+            params = full_command.substr(2);
+            return;
+        }
+    }
+    
+    // No parameters - entire string is command name
+    name = full_command;
+    params = std::string_view{};
+}
+
+} // namespace lx200
