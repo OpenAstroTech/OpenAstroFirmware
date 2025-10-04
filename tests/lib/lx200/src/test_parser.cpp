@@ -5,6 +5,7 @@
 
 #include <zephyr/ztest.h>
 #include <lx200/lx200.hpp>
+#include <string>
 
 /**
  * @file test_parser.cpp
@@ -175,7 +176,7 @@ ZTEST(lx200, test_buffer_overflow)
         }
     }
     
-    ztest_test_fail("Parser should have rejected buffer overflow");
+    zassert_unreachable("Parser should have rejected buffer overflow");
 }
 
 /* ========================================================================
@@ -341,5 +342,5 @@ ZTEST(lx200, test_partial_command_buffering)
 
 extern "C" void test_suite_parser(void)
 {
-    ztest_run_test_suites(NULL);
+    // Tests are automatically registered via ZTEST macro
 }

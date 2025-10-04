@@ -80,15 +80,21 @@ enum class PrecisionMode : uint8_t {
  * @brief Parse result codes
  * 
  * Indicates success or specific failure mode for parsing operations.
+ * Success = 0 for zassert_ok compatibility
  */
 enum class ParseResult : uint8_t {
-    Success,             ///< Parsing succeeded
+    Success = 0,         ///< Parsing succeeded (0 for zassert_ok)
     Incomplete,          ///< Need more characters
     ErrorInvalidFormat,  ///< Format doesn't match expected pattern
     ErrorOutOfRange,     ///< Numeric value out of valid range
     ErrorBufferFull,     ///< Command exceeds buffer capacity
     ErrorGeneral         ///< Other parsing error
 };
+
+/// Enable operator! for zassert_ok  
+constexpr bool operator!(ParseResult result) noexcept {
+    return result == ParseResult::Success;
+}
 
 /* ========================================================================
  * Coordinate Structures

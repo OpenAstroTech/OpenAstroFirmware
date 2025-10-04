@@ -5,6 +5,7 @@
 
 #include <zephyr/ztest.h>
 #include <lx200/lx200.hpp>
+#include <string>
 
 /**
  * @file test_integration.cpp
@@ -417,5 +418,5 @@ ZTEST(lx200, test_end_to_end_performance)
 
 extern "C" void test_suite_integration(void)
 {
-    ztest_run_test_suites(NULL);
+    // Tests are automatically registered via ZTEST macro
 }

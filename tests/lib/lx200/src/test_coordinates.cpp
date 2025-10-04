@@ -5,6 +5,7 @@
 
 #include <zephyr/ztest.h>
 #include <lx200/lx200.hpp>
+#include <string>
 
 /**
  * @file test_coordinates.cpp
@@ -416,5 +417,5 @@ ZTEST(lx200, test_coordinate_parsing_performance)
 
 extern "C" void test_suite_coordinates(void)
 {
-    ztest_run_test_suites(NULL);
+    // Tests are automatically registered via ZTEST macro
 }
