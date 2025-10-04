@@ -83,18 +83,13 @@ enum class PrecisionMode : uint8_t {
  * Success = 0 for zassert_ok compatibility
  */
 enum class ParseResult : uint8_t {
-    Success = 0,         ///< Parsing succeeded (0 for zassert_ok)
+    Success = 0,         ///< Parsing succeeded (0 for compatibility)
     Incomplete,          ///< Need more characters
     ErrorInvalidFormat,  ///< Format doesn't match expected pattern
     ErrorOutOfRange,     ///< Numeric value out of valid range
     ErrorBufferFull,     ///< Command exceeds buffer capacity
     ErrorGeneral         ///< Other parsing error
 };
-
-/// Enable operator! for zassert_ok  
-constexpr bool operator!(ParseResult result) noexcept {
-    return result == ParseResult::Success;
-}
 
 /* ========================================================================
  * Coordinate Structures
@@ -105,12 +100,18 @@ constexpr bool operator!(ParseResult result) noexcept {
  * 
  * Represents celestial longitude (0h to 24h).
  * Format: HH:MM:SS (high) or HH:MM.T (low precision)
+ * 
+ * Note: In low precision mode, tenths of arcminutes are converted to seconds.
+ * Conversion: 0.1 arcminute = 6 arcseconds (1 arcmin = 60 arcsec)
+ * 
+ * Low precision conversion table:
+ *   .0 → 0 sec    .1 → 6 sec    .2 → 12 sec   .3 → 18 sec   .4 → 24 sec
+ *   .5 → 30 sec   .6 → 36 sec   .7 → 42 sec   .8 → 48 sec   .9 → 54 sec
  */
 struct RACoordinate {
     uint8_t hours;    ///< 0-23 hours
     uint8_t minutes;  ///< 0-59 minutes
-    uint8_t seconds;  ///< 0-59 seconds (or 0 in low precision)
-    uint8_t tenths;   ///< 0-9 tenths of minute (low precision only)
+    uint8_t seconds;  ///< 0-59 arcseconds (HH:MM:SS in high precision, or tenths*6 in low precision)
     
     /// Compile-time validation
     static constexpr bool is_valid(uint8_t h, uint8_t m, uint8_t s) noexcept {
@@ -343,7 +344,7 @@ private:
  * @return ParseResult::Success or error code
  */
 ParseResult parse_ra_coordinate(
-    const char* str,
+    std::string_view str,
     PrecisionMode mode,
     RACoordinate& coord
 ) noexcept;
@@ -357,7 +358,7 @@ ParseResult parse_ra_coordinate(
  * @return ParseResult::Success or error code
  */
 ParseResult parse_dec_coordinate(
-    const char* str,
+    std::string_view str,
     PrecisionMode mode,
     DECCoordinate& coord
 ) noexcept;
@@ -370,7 +371,7 @@ ParseResult parse_dec_coordinate(
  * @return ParseResult::Success or error code
  */
 ParseResult parse_latitude_coordinate(
-    const char* str,
+    std::string_view str,
     LatitudeCoordinate& coord
 ) noexcept;
 
@@ -382,7 +383,7 @@ ParseResult parse_latitude_coordinate(
  * @return ParseResult::Success or error code
  */
 ParseResult parse_longitude_coordinate(
-    const char* str,
+    std::string_view str,
     LongitudeCoordinate& coord
 ) noexcept;
 
@@ -394,7 +395,7 @@ ParseResult parse_longitude_coordinate(
  * @return ParseResult::Success or error code
  */
 ParseResult parse_time_value(
-    const char* str,
+    std::string_view str,
     TimeValue& time
 ) noexcept;
 
@@ -406,7 +407,7 @@ ParseResult parse_time_value(
  * @return ParseResult::Success or error code
  */
 ParseResult parse_date_value(
-    const char* str,
+    std::string_view str,
     DateValue& date
 ) noexcept;
 

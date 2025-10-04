@@ -35,93 +35,102 @@ static bool parse_uint(const char* str, size_t len, uint32_t& value) noexcept
     return true;
 }
 
-/**
- * @brief Find character in string
- */
-static const char* find_char(const char* str, char c) noexcept
-{
-    if (!str) return nullptr;
-    while (*str && *str != c) str++;
-    return (*str == c) ? str : nullptr;
-}
-
 /* ========================================================================
  * Right Ascension Parsing
  * ======================================================================== */
 
 ParseResult parse_ra_coordinate(
-    const char* str,
+    std::string_view str,
     PrecisionMode mode,
     RACoordinate& coord
 ) noexcept
 {
-    if (!str) {
+    if (str.empty()) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Format: HH:MM:SS (high) or HH:MM.T (low)
-    const char* colon1 = find_char(str, ':');
-    if (!colon1) {
+    size_t colon1_pos = str.find(':');
+    if (colon1_pos == std::string_view::npos) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    
+    // Hours must be exactly 2 digits
+    if (colon1_pos != 2) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse hours
     uint32_t hours;
-    if (!parse_uint(str, colon1 - str, hours) || hours >= 24) {
+    if (!parse_uint(str.data(), colon1_pos, hours)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (hours >= 24) {
         return ParseResult::ErrorOutOfRange;
     }
     
-    const char* minute_start = colon1 + 1;
+    std::string_view minute_part = str.substr(colon1_pos + 1);
     
     if (mode == PrecisionMode::High) {
         // High precision: HH:MM:SS
-        const char* colon2 = find_char(minute_start, ':');
-        if (!colon2) {
+        size_t colon2_pos = minute_part.find(':');
+        if (colon2_pos == std::string_view::npos) {
             return ParseResult::ErrorInvalidFormat;
         }
         
         // Parse minutes
         uint32_t minutes;
-        if (!parse_uint(minute_start, colon2 - minute_start, minutes) || minutes >= 60) {
+        if (!parse_uint(minute_part.data(), colon2_pos, minutes)) {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        if (minutes >= 60) {
             return ParseResult::ErrorOutOfRange;
         }
         
-        // Parse seconds
+        // Parse seconds (must be exactly 2 digits)
+        std::string_view second_part = minute_part.substr(colon2_pos + 1);
         uint32_t seconds;
-        const char* second_start = colon2 + 1;
-        if (!parse_uint(second_start, 2, seconds) || seconds >= 60) {
+        if (!parse_uint(second_part.data(), 2, seconds)) {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        if (seconds >= 60) {
             return ParseResult::ErrorOutOfRange;
         }
         
         coord.hours = static_cast<uint8_t>(hours);
         coord.minutes = static_cast<uint8_t>(minutes);
         coord.seconds = static_cast<uint8_t>(seconds);
-        coord.tenths = 0;
     }
     else {
         // Low precision: HH:MM.T
-        const char* dot = find_char(minute_start, '.');
-        if (!dot) {
+        // Convert tenths of arcminutes to arcseconds: 0.1 arcmin = 6 arcsec
+        size_t dot_pos = minute_part.find('.');
+        if (dot_pos == std::string_view::npos) {
             return ParseResult::ErrorInvalidFormat;
         }
         
         // Parse minutes
         uint32_t minutes;
-        if (!parse_uint(minute_start, dot - minute_start, minutes) || minutes >= 60) {
+        if (!parse_uint(minute_part.data(), dot_pos, minutes)) {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        if (minutes >= 60) {
             return ParseResult::ErrorOutOfRange;
         }
         
-        // Parse tenths
+        // Parse tenths (0-9)
+        std::string_view tenth_part = minute_part.substr(dot_pos + 1);
         uint32_t tenths;
-        const char* tenth_start = dot + 1;
-        if (!parse_uint(tenth_start, 1, tenths) || tenths >= 10) {
+        if (!parse_uint(tenth_part.data(), 1, tenths)) {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        if (tenths >= 10) {
             return ParseResult::ErrorOutOfRange;
         }
         
         coord.hours = static_cast<uint8_t>(hours);
         coord.minutes = static_cast<uint8_t>(minutes);
-        coord.seconds = 0;
-        coord.tenths = static_cast<uint8_t>(tenths);
+        coord.seconds = static_cast<uint8_t>(tenths * 6);  // Convert tenths to seconds
     }
     
     return ParseResult::Success;
@@ -132,12 +141,12 @@ ParseResult parse_ra_coordinate(
  * ======================================================================== */
 
 ParseResult parse_dec_coordinate(
-    const char* str,
+    std::string_view str,
     PrecisionMode mode,
     DECCoordinate& coord
 ) noexcept
 {
-    if (!str) {
+    if (str.empty()) {
         return ParseResult::ErrorInvalidFormat;
     }
     
@@ -147,40 +156,49 @@ ParseResult parse_dec_coordinate(
         return ParseResult::ErrorInvalidFormat;
     }
     char sign = str[0];
-    str++; // Skip sign
+    std::string_view str_nosign = str.substr(1); // Skip sign
     
     // Find degree separator (*) 
-    const char* star = find_char(str, '*');
-    if (!star) {
+    size_t star_pos = str_nosign.find('*');
+    if (star_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse degrees
     uint32_t degrees;
-    if (!parse_uint(str, star - str, degrees) || degrees > 90) {
+    if (!parse_uint(str_nosign.data(), star_pos, degrees)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (degrees > 90) {
         return ParseResult::ErrorOutOfRange;
     }
     
-    const char* arcmin_start = star + 1;
+    std::string_view arcmin_part = str_nosign.substr(star_pos + 1);
     
     if (mode == PrecisionMode::High) {
         // High precision: sDD*MM:SS or sDD*MM'SS
-        const char* sep = find_char(arcmin_start, ':');
-        if (!sep) {
-            sep = find_char(arcmin_start, '\'');  // Try apostrophe
+        size_t sep_pos = arcmin_part.find(':');
+        if (sep_pos == std::string_view::npos) {
+            sep_pos = arcmin_part.find('\'');  // Try apostrophe
         }
         
-        if (sep) {
+        if (sep_pos != std::string_view::npos) {
             // Parse arcminutes
             uint32_t arcminutes;
-            if (!parse_uint(arcmin_start, sep - arcmin_start, arcminutes) || arcminutes >= 60) {
+            if (!parse_uint(arcmin_part.data(), sep_pos, arcminutes)) {
+                return ParseResult::ErrorInvalidFormat;
+            }
+            if (arcminutes >= 60) {
                 return ParseResult::ErrorOutOfRange;
             }
             
             // Parse arcseconds
+            std::string_view arcsec_part = arcmin_part.substr(sep_pos + 1);
             uint32_t arcseconds;
-            const char* arcsec_start = sep + 1;
-            if (!parse_uint(arcsec_start, 2, arcseconds) || arcseconds >= 60) {
+            if (!parse_uint(arcsec_part.data(), 2, arcseconds)) {
+                return ParseResult::ErrorInvalidFormat;
+            }
+            if (arcseconds >= 60) {
                 return ParseResult::ErrorOutOfRange;
             }
             
@@ -197,7 +215,10 @@ ParseResult parse_dec_coordinate(
     else {
         // Low precision: sDD*MM
         uint32_t arcminutes;
-        if (!parse_uint(arcmin_start, 2, arcminutes) || arcminutes >= 60) {
+        if (!parse_uint(arcmin_part.data(), 2, arcminutes)) {
+            return ParseResult::ErrorInvalidFormat;
+        }
+        if (arcminutes >= 60) {
             return ParseResult::ErrorOutOfRange;
         }
         
@@ -215,11 +236,11 @@ ParseResult parse_dec_coordinate(
  * ======================================================================== */
 
 ParseResult parse_latitude_coordinate(
-    const char* str,
+    std::string_view str,
     LatitudeCoordinate& coord
 ) noexcept
 {
-    if (!str) {
+    if (str.empty()) {
         return ParseResult::ErrorInvalidFormat;
     }
     
@@ -228,24 +249,30 @@ ParseResult parse_latitude_coordinate(
         return ParseResult::ErrorInvalidFormat;
     }
     char sign = str[0];
-    str++; // Skip sign
+    std::string_view str_nosign = str.substr(1); // Skip sign
     
     // Find degree separator
-    const char* star = find_char(str, '*');
-    if (!star) {
+    size_t star_pos = str_nosign.find('*');
+    if (star_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse degrees
     uint32_t degrees;
-    if (!parse_uint(str, star - str, degrees) || degrees > 90) {
+    if (!parse_uint(str_nosign.data(), star_pos, degrees)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (degrees > 90) {
         return ParseResult::ErrorOutOfRange;
     }
     
     // Parse arcminutes
-    const char* arcmin_start = star + 1;
+    std::string_view arcmin_part = str_nosign.substr(star_pos + 1);
     uint32_t arcminutes;
-    if (!parse_uint(arcmin_start, 2, arcminutes) || arcminutes >= 60) {
+    if (!parse_uint(arcmin_part.data(), 2, arcminutes)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (arcminutes >= 60) {
         return ParseResult::ErrorOutOfRange;
     }
     
@@ -261,30 +288,36 @@ ParseResult parse_latitude_coordinate(
  * ======================================================================== */
 
 ParseResult parse_longitude_coordinate(
-    const char* str,
+    std::string_view str,
     LongitudeCoordinate& coord
 ) noexcept
 {
-    if (!str) {
+    if (str.empty()) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Format: DDD*MM
-    const char* star = find_char(str, '*');
-    if (!star) {
+    size_t star_pos = str.find('*');
+    if (star_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse degrees (0-359)
     uint32_t degrees;
-    if (!parse_uint(str, star - str, degrees) || degrees >= 360) {
+    if (!parse_uint(str.data(), star_pos, degrees)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (degrees >= 360) {
         return ParseResult::ErrorOutOfRange;
     }
     
     // Parse arcminutes
-    const char* arcmin_start = star + 1;
+    std::string_view arcmin_part = str.substr(star_pos + 1);
     uint32_t arcminutes;
-    if (!parse_uint(arcmin_start, 2, arcminutes) || arcminutes >= 60) {
+    if (!parse_uint(arcmin_part.data(), 2, arcminutes)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (arcminutes >= 60) {
         return ParseResult::ErrorOutOfRange;
     }
     
@@ -299,42 +332,51 @@ ParseResult parse_longitude_coordinate(
  * ======================================================================== */
 
 ParseResult parse_time_value(
-    const char* str,
+    std::string_view str,
     TimeValue& time
 ) noexcept
 {
-    if (!str) {
+    if (str.empty()) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Format: HH:MM:SS
-    const char* colon1 = find_char(str, ':');
-    if (!colon1) {
+    size_t colon1_pos = str.find(':');
+    if (colon1_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse hours
     uint32_t hours;
-    if (!parse_uint(str, colon1 - str, hours) || hours >= 24) {
+    if (!parse_uint(str.data(), colon1_pos, hours)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (hours >= 24) {
         return ParseResult::ErrorOutOfRange;
     }
     
-    const char* minute_start = colon1 + 1;
-    const char* colon2 = find_char(minute_start, ':');
-    if (!colon2) {
+    std::string_view minute_part = str.substr(colon1_pos + 1);
+    size_t colon2_pos = minute_part.find(':');
+    if (colon2_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse minutes
     uint32_t minutes;
-    if (!parse_uint(minute_start, colon2 - minute_start, minutes) || minutes >= 60) {
+    if (!parse_uint(minute_part.data(), colon2_pos, minutes)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (minutes >= 60) {
         return ParseResult::ErrorOutOfRange;
     }
     
     // Parse seconds
+    std::string_view second_part = minute_part.substr(colon2_pos + 1);
     uint32_t seconds;
-    const char* second_start = colon2 + 1;
-    if (!parse_uint(second_start, 2, seconds) || seconds >= 60) {
+    if (!parse_uint(second_part.data(), 2, seconds)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (seconds >= 60) {
         return ParseResult::ErrorOutOfRange;
     }
     
@@ -350,42 +392,51 @@ ParseResult parse_time_value(
  * ======================================================================== */
 
 ParseResult parse_date_value(
-    const char* str,
+    std::string_view str,
     DateValue& date
 ) noexcept
 {
-    if (!str) {
+    if (str.empty()) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Format: MM/DD/YY
-    const char* slash1 = find_char(str, '/');
-    if (!slash1) {
+    size_t slash1_pos = str.find('/');
+    if (slash1_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse month
     uint32_t month;
-    if (!parse_uint(str, slash1 - str, month) || month < 1 || month > 12) {
+    if (!parse_uint(str.data(), slash1_pos, month)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (month < 1 || month > 12) {
         return ParseResult::ErrorOutOfRange;
     }
     
-    const char* day_start = slash1 + 1;
-    const char* slash2 = find_char(day_start, '/');
-    if (!slash2) {
+    std::string_view day_part = str.substr(slash1_pos + 1);
+    size_t slash2_pos = day_part.find('/');
+    if (slash2_pos == std::string_view::npos) {
         return ParseResult::ErrorInvalidFormat;
     }
     
     // Parse day
     uint32_t day;
-    if (!parse_uint(day_start, slash2 - day_start, day) || day < 1 || day > 31) {
+    if (!parse_uint(day_part.data(), slash2_pos, day)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (day < 1 || day > 31) {
         return ParseResult::ErrorOutOfRange;
     }
     
     // Parse year
+    std::string_view year_part = day_part.substr(slash2_pos + 1);
     uint32_t year;
-    const char* year_start = slash2 + 1;
-    if (!parse_uint(year_start, 2, year) || year > 99) {
+    if (!parse_uint(year_part.data(), 2, year)) {
+        return ParseResult::ErrorInvalidFormat;
+    }
+    if (year > 99) {
         return ParseResult::ErrorOutOfRange;
     }
     

@@ -78,8 +78,22 @@ std::optional<Command> ParserState::get_command() noexcept
     std::string_view name, params;
     parse_command_parts(name, params);
     
-    // Identify command family
-    CommandFamily family = identify_family(name.empty() ? '\0' : name[0]);
+    // Identify command family based on full command name
+    CommandFamily family = CommandFamily::Unknown;
+    
+    // Special cases for date/time commands (semantic grouping)
+    if (name == "GC" || name == "GL" || name == "Ga" || name == "Gc" ||
+        name == "SC" || name == "SL" || name == "SG" || name == "SH") {
+        family = CommandFamily::DateTime;
+    }
+    // Special case: gT (update time from GPS) is GetInfo, not GPS
+    else if (name == "gT") {
+        family = CommandFamily::GetInfo;
+    }
+    // Default: use first character mapping
+    else {
+        family = identify_family(name.empty() ? '\0' : name[0]);
+    }
     
     // Create command
     Command cmd{
