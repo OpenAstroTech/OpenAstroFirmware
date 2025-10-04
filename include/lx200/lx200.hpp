@@ -376,6 +376,18 @@ class ParserState
 		precision_ = mode;
 	}
 
+	/**
+	 * @brief Get maximum command buffer length
+	 *
+	 * Exposes the internal buffer size limit for testing and validation.
+	 *
+	 * @return Maximum number of characters (including ':' prefix and '#' terminator)
+	 */
+	static constexpr size_t max_command_length() noexcept
+	{
+		return MAX_COMMAND_LENGTH;
+	}
+
       private:
 	static constexpr size_t MAX_COMMAND_LENGTH = 64; ///< Maximum command buffer size
 

@@ -18,7 +18,7 @@ zephyr_library_sources_ifdef(CONFIG_LX200
 # Public include directory
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${ZEPHYR_BASE}/../OpenAstroFirmware/include
+  ${PROJECT_SOURCE_DIR}/include
 )
 
 # Compiler flags for embedded C++20

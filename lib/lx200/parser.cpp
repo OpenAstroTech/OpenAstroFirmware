@@ -149,32 +149,29 @@ void ParserState::parse_command_parts(std::string_view& name, std::string_view& 
         return;
     }
     
-    // Commands with parameters are typically 2 characters followed by data
-    // Examples: :Sr12:34:56#, :Sd+45*30:15#, :SC03/15/23#
-    // Commands without parameters: :GR#, :MS#, :Q#
-    
-    // Heuristic: If command is longer than 2 chars and first char is 'S',
-    // it likely has parameters (SetInfo commands)
-    // Also handles other commands with parameters
+    // Lookup table: command families that take parameters after 2-char name
+    // This replaces the if-else chain for better maintainability
+    static constexpr char PARAMETER_FAMILIES[] = {
+        'S',  // SetInfo commands (Sr, Sd, SC, SL, etc.)
+        'R',  // Rate commands (R0-R9)
+        'T',  // Tracking commands (T+, T-)
+        'F',  // Focus commands (F+, F-)
+        'B',  // Reticle commands (B+, B-)
+        'g',  // GPS commands (some variants)
+        'L',  // Library commands (some variants)
+    };
     
     if (full_command.length() > 2) {
         char first = full_command[0];
         
-        // SetInfo commands have parameters after 2-char name
-        if (first == 'S') {
-            name = full_command.substr(0, 2);
-            params = full_command.substr(2);
-            return;
-        }
-        
-        // Some other commands have parameters too
-        // For now, assume 2-char commands, rest is parameters
-        // This can be refined based on command-specific rules
-        if (full_command.length() > 2 && 
-            (first == 'R' || first == 'T' || first == 'F' || first == 'B')) {
-            name = full_command.substr(0, 2);
-            params = full_command.substr(2);
-            return;
+        // Check if first character is in parameter families
+        for (char family : PARAMETER_FAMILIES) {
+            if (first == family) {
+                // Standard pattern: 2-char command name + parameters
+                name = full_command.substr(0, 2);
+                params = full_command.substr(2);
+                return;
+            }
         }
     }
     
