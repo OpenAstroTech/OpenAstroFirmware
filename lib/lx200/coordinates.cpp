@@ -202,6 +202,11 @@ ParseResult parse_dec_coordinate(
                 return ParseResult::ErrorOutOfRange;
             }
             
+            // DEC 90° is only valid when arcminutes and arcseconds are both zero
+            if (degrees == 90 && (arcminutes > 0 || arcseconds > 0)) {
+                return ParseResult::ErrorOutOfRange;
+            }
+            
             coord.sign = sign;
             coord.degrees = static_cast<uint8_t>(degrees);
             coord.arcminutes = static_cast<uint8_t>(arcminutes);
@@ -219,6 +224,11 @@ ParseResult parse_dec_coordinate(
             return ParseResult::ErrorInvalidFormat;
         }
         if (arcminutes >= 60) {
+            return ParseResult::ErrorOutOfRange;
+        }
+        
+        // DEC 90° is only valid when arcminutes are zero (arcseconds always 0 in low precision)
+        if (degrees == 90 && arcminutes > 0) {
             return ParseResult::ErrorOutOfRange;
         }
         
@@ -273,6 +283,11 @@ ParseResult parse_latitude_coordinate(
         return ParseResult::ErrorInvalidFormat;
     }
     if (arcminutes >= 60) {
+        return ParseResult::ErrorOutOfRange;
+    }
+    
+    // Latitude 90° is only valid when arcminutes are zero
+    if (degrees == 90 && arcminutes > 0) {
         return ParseResult::ErrorOutOfRange;
     }
     
@@ -437,6 +452,28 @@ ParseResult parse_date_value(
         return ParseResult::ErrorInvalidFormat;
     }
     if (year > 99) {
+        return ParseResult::ErrorOutOfRange;
+    }
+    
+    // Validate day count for the specific month (accounting for leap years)
+    static constexpr uint8_t days_in_month[] = {
+        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
+    
+    uint8_t max_day = days_in_month[month - 1];
+    
+    // Handle February leap year (year 2000-2099)
+    if (month == 2) {
+        uint32_t full_year = 2000 + year;
+        // Leap year: divisible by 4, and (not divisible by 100 OR divisible by 400)
+        bool is_leap = (full_year % 4 == 0) && 
+                       ((full_year % 100 != 0) || (full_year % 400 == 0));
+        if (is_leap) {
+            max_day = 29;
+        }
+    }
+    
+    if (day > max_day) {
         return ParseResult::ErrorOutOfRange;
     }
     

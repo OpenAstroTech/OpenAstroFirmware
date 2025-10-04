@@ -103,6 +103,9 @@ std::optional<Command> ParserState::get_command() noexcept
     };
     
     // Reset for next command (but preserve precision)
+    // NOTE: The Command's string_views reference buffer_ which will be
+    // reused immediately. Caller MUST consume the command before calling
+    // feed_character() again. See Command struct documentation.
     reset();
     
     return cmd;

@@ -172,7 +172,42 @@ ZTEST(lx200, test_dec_validation)
 }
 
 /**
- * @brief TC-DEC-004: Test apostrophe separator (alternate format)
+ * @brief TC-DEC-004: Test 90° boundary validation
+ *
+ * Declination 90° is only valid when arcminutes and arcseconds are both zero.
+ * This tests the critical edge case identified in PR review.
+ */
+ZTEST(lx200, test_dec_90_degree_boundary)
+{
+	DECCoordinate dec;
+
+	// Valid: Exactly 90° with zero arcminutes/arcseconds
+	zassert_equal(parse_dec_coordinate("+90*00:00", PrecisionMode::High, dec),
+		      ParseResult::Success, "Should accept +90*00:00");
+	zassert_equal(parse_dec_coordinate("-90*00:00", PrecisionMode::High, dec),
+		      ParseResult::Success, "Should accept -90*00:00");
+	zassert_equal(parse_dec_coordinate("+90*00", PrecisionMode::Low, dec),
+		      ParseResult::Success, "Should accept +90*00 (low precision)");
+	zassert_equal(parse_dec_coordinate("-90*00", PrecisionMode::Low, dec),
+		      ParseResult::Success, "Should accept -90*00 (low precision)");
+
+	// Invalid: 90° with non-zero arcminutes or arcseconds
+	zassert_equal(parse_dec_coordinate("+90*30:00", PrecisionMode::High, dec),
+		      ParseResult::ErrorOutOfRange, "Should reject +90*30:00");
+	zassert_equal(parse_dec_coordinate("+90*00:01", PrecisionMode::High, dec),
+		      ParseResult::ErrorOutOfRange, "Should reject +90*00:01");
+	zassert_equal(parse_dec_coordinate("-90*30:00", PrecisionMode::High, dec),
+		      ParseResult::ErrorOutOfRange, "Should reject -90*30:00");
+	zassert_equal(parse_dec_coordinate("-90*00:01", PrecisionMode::High, dec),
+		      ParseResult::ErrorOutOfRange, "Should reject -90*00:01");
+	zassert_equal(parse_dec_coordinate("+90*30", PrecisionMode::Low, dec),
+		      ParseResult::ErrorOutOfRange, "Should reject +90*30 (low precision)");
+	zassert_equal(parse_dec_coordinate("-90*30", PrecisionMode::Low, dec),
+		      ParseResult::ErrorOutOfRange, "Should reject -90*30 (low precision)");
+}
+
+/**
+ * @brief TC-DEC-005: Test apostrophe separator (alternate format)
  *
  * LX200 uses * for degrees, ' for arcminutes in some contexts
  */
@@ -236,6 +271,33 @@ ZTEST(lx200, test_latitude_validation)
 	// Invalid cases
 	zassert_equal(parse_latitude_coordinate("+91*00", lat), ParseResult::ErrorOutOfRange,
 		      "Should reject > +90°");
+}
+
+/**
+ * @brief TC-LAT-003: Test 90° boundary validation
+ *
+ * Latitude 90° is only valid when arcminutes are zero.
+ * This tests the critical edge case identified in PR review.
+ */
+ZTEST(lx200, test_latitude_90_degree_boundary)
+{
+	LatitudeCoordinate lat;
+
+	// Valid: Exactly 90° with zero arcminutes
+	zassert_equal(parse_latitude_coordinate("+90*00", lat), ParseResult::Success,
+		      "Should accept +90*00");
+	zassert_equal(parse_latitude_coordinate("-90*00", lat), ParseResult::Success,
+		      "Should accept -90*00");
+
+	// Invalid: 90° with non-zero arcminutes
+	zassert_equal(parse_latitude_coordinate("+90*30", lat), ParseResult::ErrorOutOfRange,
+		      "Should reject +90*30");
+	zassert_equal(parse_latitude_coordinate("-90*30", lat), ParseResult::ErrorOutOfRange,
+		      "Should reject -90*30");
+	zassert_equal(parse_latitude_coordinate("+90*01", lat), ParseResult::ErrorOutOfRange,
+		      "Should reject +90*01");
+	zassert_equal(parse_latitude_coordinate("-90*01", lat), ParseResult::ErrorOutOfRange,
+		      "Should reject -90*01");
 }
 
 /* ========================================================================
@@ -373,6 +435,89 @@ ZTEST(lx200, test_date_day_validation)
 		      "Should reject day 0");
 	zassert_equal(parse_date_value("03/32/23", date), ParseResult::ErrorOutOfRange,
 		      "Should reject day > 31");
+}
+
+/**
+ * @brief TC-DATE-004: Test month-specific day validation
+ *
+ * Validates that the parser correctly enforces day limits for each month,
+ * preventing invalid dates like February 30th or April 31st.
+ * This tests the critical date validation issue identified in PR review.
+ */
+ZTEST(lx200, test_date_month_day_validation)
+{
+	DateValue date;
+
+	// Valid: Last day of each month (non-leap year)
+	zassert_equal(parse_date_value("01/31/23", date), ParseResult::Success,
+		      "Should accept January 31st");
+	zassert_equal(parse_date_value("02/28/23", date), ParseResult::Success,
+		      "Should accept February 28th (non-leap year)");
+	zassert_equal(parse_date_value("03/31/23", date), ParseResult::Success,
+		      "Should accept March 31st");
+	zassert_equal(parse_date_value("04/30/23", date), ParseResult::Success,
+		      "Should accept April 30th");
+	zassert_equal(parse_date_value("05/31/23", date), ParseResult::Success,
+		      "Should accept May 31st");
+	zassert_equal(parse_date_value("06/30/23", date), ParseResult::Success,
+		      "Should accept June 30th");
+	zassert_equal(parse_date_value("07/31/23", date), ParseResult::Success,
+		      "Should accept July 31st");
+	zassert_equal(parse_date_value("08/31/23", date), ParseResult::Success,
+		      "Should accept August 31st");
+	zassert_equal(parse_date_value("09/30/23", date), ParseResult::Success,
+		      "Should accept September 30th");
+	zassert_equal(parse_date_value("10/31/23", date), ParseResult::Success,
+		      "Should accept October 31st");
+	zassert_equal(parse_date_value("11/30/23", date), ParseResult::Success,
+		      "Should accept November 30th");
+	zassert_equal(parse_date_value("12/31/23", date), ParseResult::Success,
+		      "Should accept December 31st");
+
+	// Invalid: Days beyond month limits
+	zassert_equal(parse_date_value("02/30/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject February 30th");
+	zassert_equal(parse_date_value("02/29/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject February 29th (non-leap year)");
+	zassert_equal(parse_date_value("04/31/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject April 31st");
+	zassert_equal(parse_date_value("06/31/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject June 31st");
+	zassert_equal(parse_date_value("09/31/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject September 31st");
+	zassert_equal(parse_date_value("11/31/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject November 31st");
+}
+
+/**
+ * @brief TC-DATE-005: Test leap year validation
+ *
+ * Validates that February 29th is accepted in leap years and rejected
+ * in non-leap years, following standard Gregorian calendar rules.
+ */
+ZTEST(lx200, test_date_leap_year_validation)
+{
+	DateValue date;
+
+	// Valid: February 29th in leap years
+	zassert_equal(parse_date_value("02/29/24", date), ParseResult::Success,
+		      "Should accept Feb 29, 2024 (leap year)");
+	zassert_equal(parse_date_value("02/29/20", date), ParseResult::Success,
+		      "Should accept Feb 29, 2020 (leap year)");
+	zassert_equal(parse_date_value("02/29/00", date), ParseResult::Success,
+		      "Should accept Feb 29, 2000 (leap year, divisible by 400)");
+
+	// Invalid: February 29th in non-leap years
+	zassert_equal(parse_date_value("02/29/23", date), ParseResult::ErrorOutOfRange,
+		      "Should reject Feb 29, 2023 (not a leap year)");
+	zassert_equal(parse_date_value("02/29/21", date), ParseResult::ErrorOutOfRange,
+		      "Should reject Feb 29, 2021 (not a leap year)");
+	zassert_equal(parse_date_value("02/29/25", date), ParseResult::ErrorOutOfRange,
+		      "Should reject Feb 29, 2025 (not a leap year)");
+
+	// Invalid: February 30th (never valid)
+	zassert_equal(parse_date_value("02/30/24", date), ParseResult::ErrorOutOfRange,
+		      "Should reject Feb 30, 2024 (even in leap year)");
 }
 
 /* ========================================================================

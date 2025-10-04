@@ -15,7 +15,8 @@
 		"terminal.integrated.cwd": "${workspaceFolder:OpenAstroFirmware}",
 		"terminal.integrated.defaultProfile.linux": "zsh",
 		"files.associations": {
-			"string_view": "cpp"
+			"string_view": "cpp",
+			"array": "cpp"
 		}
 	}
 }

@@ -224,7 +224,32 @@ struct DateValue {
  *
  * Represents a complete command with family classification and
  * optional parameter string. Uses string_view for non-owning
- * references to the parser's buffer.
+ * references to the parser's internal buffer.
+ *
+ * @warning LIFETIME SAFETY: The string_view members reference the
+ * parser's internal buffer. This Command is only valid until the
+ * next call to feed_character() or reset(). You MUST consume the
+ * command (extract name/parameters) before feeding the next character.
+ * Failure to do so will result in use-after-invalidation.
+ *
+ * @par Usage Pattern (SAFE):
+ * @code
+ * auto cmd = parser.get_command();
+ * if (cmd) {
+ *     std::string name(cmd->name);         // Copy before next feed
+ *     std::string params(cmd->parameters); // Copy before next feed
+ *     parser.feed_character(':');          // Now safe to feed next
+ * }
+ * @endcode
+ *
+ * @par Usage Pattern (UNSAFE):
+ * @code
+ * auto cmd = parser.get_command();         // cmd holds views into buffer
+ * parser.feed_character(':');              // DANGER: buffer reset!
+ * if (cmd) {
+ *     // cmd->name is now DANGLING - use-after-free!
+ * }
+ * @endcode
  */
 struct Command {
 	CommandFamily family;        ///< Command family classification
@@ -312,7 +337,24 @@ class ParserState
 	 *
 	 * @return Command object if ready, std::nullopt otherwise
 	 *
-	 * After calling, parser resets to accept next command.
+	 * After calling, parser resets its internal buffer to accept the
+	 * next command.
+	 *
+	 * @warning LIFETIME SAFETY: The returned Command contains string_view
+	 * references into the parser's internal buffer. These views become
+	 * INVALID as soon as you call feed_character() again. You MUST copy
+	 * any needed strings before feeding the next character.
+	 *
+	 * @par Safe Usage:
+	 * @code
+	 * if (auto cmd = parser.get_command()) {
+	 *     // Copy strings before next feed:
+	 *     std::string name(cmd->name);
+	 *     std::string params(cmd->parameters);
+	 *     // Now safe to continue:
+	 *     parser.feed_character(':');
+	 * }
+	 * @endcode
 	 */
 	std::optional<Command> get_command() noexcept;
 
