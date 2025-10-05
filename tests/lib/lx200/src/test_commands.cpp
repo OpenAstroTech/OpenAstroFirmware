@@ -79,7 +79,7 @@ ZTEST(lx200, test_reticle_commands)
 }
 
 /**
- * @brief Test Sync/DateTime command family (C)
+ * @brief Test Sync command family (C)
  * 
  * According to LX200CommandSet.md Section C:
  * - :CM# - Synchronize telescope with current database object
@@ -95,7 +95,7 @@ ZTEST(lx200, test_sync_commands)
 	}
 	auto cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse CM command");
-	zassert_equal(cmd->family, CommandFamily::DateTime, "CM should be DateTime/Sync family");
+	zassert_equal(cmd->family, CommandFamily::Sync, "CM should be Sync family");
 
 	// :CL# - Sync to selenographic coordinates
 	parser.reset();
@@ -104,59 +104,59 @@ ZTEST(lx200, test_sync_commands)
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse CL command");
-	zassert_equal(cmd->family, CommandFamily::DateTime, "CL should be DateTime/Sync family");
+	zassert_equal(cmd->family, CommandFamily::Sync, "CL should be Sync family");
 }
 
 /**
- * @brief Test DateTime Get/Set commands (G/S with date/time)
+ * @brief Test DateTime commands (date/time GET/SET commands)
  * 
  * According to LX200CommandSet.md:
- * - :GC# - Get calendar date (MM/DD/YY)
- * - :GL# - Get local time (24h format)
- * - :Ga# - Get local time (12h format)
- * - :GS# - Get sidereal time
- * - :SCMM/DD/YY# - Set calendar date
- * - :SLHH:MM:SS# - Set local time
- * - :SSHH:MM:SS# - Set sidereal time
+ * - :GC# - Get calendar date (MM/DD/YY) - GetInfo family
+ * - :GL# - Get local time (24h format) - GetInfo family
+ * - :Ga# - Get local time (12h format) - GetInfo family
+ * - :GS# - Get sidereal time - GetInfo family
+ * - :SCMM/DD/YY# - Set calendar date - SetInfo family
+ * - :SLHH:MM:SS# - Set local time - SetInfo family
+ * - :SSHH:MM:SS# - Set sidereal time - SetInfo family
  */
 ZTEST(lx200, test_datetime_commands)
 {
 	ParserState parser;
 
-	// :GC# - Get calendar date
+	// :GC# - Get calendar date (GetInfo family by prefix)
 	for (const char c : std::string_view(":GC#")) {
 		parser.feed_character(c);
 	}
 	auto cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse GC command");
-	zassert_equal(cmd->family, CommandFamily::DateTime, "GC should be DateTime family");
+	zassert_equal(cmd->family, CommandFamily::GetInfo, "GC should be GetInfo family");
 
-	// :SC03/15/23# - Set calendar date (SetInfo family, date/time semantics)
+	// :SC03/15/23# - Set calendar date (SetInfo family by prefix)
 	parser.reset();
 	for (const char c : std::string_view(":SC03/15/23#")) {
 		parser.feed_character(c);
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse SC command");
-	zassert_equal(cmd->family, CommandFamily::SetInfo, "SC should be SetInfo family (S prefix)");
+	zassert_equal(cmd->family, CommandFamily::SetInfo, "SC should be SetInfo family");
 
-	// :GL# - Get local time (24h)
+	// :GL# - Get local time (GetInfo family by prefix)
 	parser.reset();
 	for (const char c : std::string_view(":GL#")) {
 		parser.feed_character(c);
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse GL command");
-	zassert_equal(cmd->family, CommandFamily::DateTime, "GL should be DateTime family");
+	zassert_equal(cmd->family, CommandFamily::GetInfo, "GL should be GetInfo family");
 
-	// :SL14:30:45# - Set local time (SetInfo family, date/time semantics)
+	// :SL14:30:45# - Set local time (SetInfo family by prefix)
 	parser.reset();
 	for (const char c : std::string_view(":SL14:30:45#")) {
 		parser.feed_character(c);
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse SL command");
-	zassert_equal(cmd->family, CommandFamily::SetInfo, "SL should be SetInfo family (S prefix)");
+	zassert_equal(cmd->family, CommandFamily::SetInfo, "SL should be SetInfo family");
 }
 
 /**
@@ -272,7 +272,7 @@ ZTEST(lx200, test_getinfo_commands)
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse GC command");
-	zassert_equal(cmd->family, CommandFamily::DateTime, "GC should be DateTime family");
+	zassert_equal(cmd->family, CommandFamily::GetInfo, "GC should be GetInfo family");
 
 	// :GT# - Get tracking rate (uppercase G, not lowercase g)
 	parser.reset();
@@ -416,7 +416,7 @@ ZTEST(lx200, test_home_commands)
  * - :H# - Toggle between 24 and 12 hour time format
  * 
  * Note: This is different from lowercase 'h' (home commands)
- * Currently mapped to DateTime family as it's time-related
+ * Mapped to HourFormat family
  */
 ZTEST(lx200, test_hour_format_commands)
 {
@@ -428,8 +428,7 @@ ZTEST(lx200, test_hour_format_commands)
 	}
 	auto cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse H command");
-	// H commands may be mapped to DateTime or a separate family
-	// Check implementation's actual mapping
+	zassert_equal(cmd->family, CommandFamily::HourFormat, "H should be HourFormat family");
 }
 
 /**
@@ -815,15 +814,15 @@ ZTEST(lx200, test_case_sensitivity)
 	zassert_equal(cmd->family, CommandFamily::GPS,
 		":gT# (lowercase g) should be GPS family (set time from GPS)");
 
-	// Verify :H# (uppercase H) is DateTime (hour format)
+	// Verify :H# (uppercase H) is HourFormat (time format toggle)
 	parser.reset();
 	for (const char c : std::string_view(":H#")) {
 		parser.feed_character(c);
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse H command");
-	zassert_equal(cmd->family, CommandFamily::DateTime,
-		":H# (uppercase H) should be DateTime family (toggle time format)");
+	zassert_equal(cmd->family, CommandFamily::HourFormat,
+		":H# (uppercase H) should be HourFormat family (toggle time format)");
 
 	// Verify :hP# (lowercase h) is Home (park position)
 	parser.reset();

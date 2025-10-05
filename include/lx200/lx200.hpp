@@ -45,26 +45,34 @@ namespace lx200
  *
  * Commands are grouped by their first character after the ':' prefix.
  * This enables fast lookup and categorization.
+ * 
+ * Note: Some command families have semantic groupings across multiple
+ * prefixes (e.g., date/time commands span C, G, H, S families).
  */
 enum class CommandFamily : uint8_t {
 	Alignment = 'A',  ///< Telescope alignment commands
 	Reticle = 'B',    ///< Reticle brightness and accessory control
-	DateTime = 'C',   ///< Date/time commands (also some G, S, L)
+	Sync = 'C',       ///< Sync control (telescope position synchronization)
 	Distance = 'D',   ///< Distance bars
+	Fan = 'f',        ///< Fan/power control (lowercase f, LX200GPS/LX16")
 	Focus = 'F',      ///< Focuser control
 	GetInfo = 'G',    ///< Get telescope information
 	GPS = 'g',        ///< GPS-related commands (lowercase g)
-	Home = 'h',       ///< Home position and parking
+	Home = 'h',       ///< Home position and parking (lowercase h)
+	HourFormat = 'H', ///< Hour angle/time format toggle (uppercase H)
 	Initialize = 'I', ///< Initialize telescope
 	Library = 'L',    ///< Object library commands
 	Movement = 'M',   ///< Slew and movement control
 	Precision = 'P',  ///< Toggle precision mode
 	Quit = 'Q',       ///< Stop/quit movement
+	Derotator = 'r',  ///< Field de-rotator control (lowercase r, LX16")
 	Rate = 'R',       ///< Slew rate control
 	SetInfo = 'S',    ///< Set telescope information
 	Tracking = 'T',   ///< Tracking rate control
-	User = 'U',       ///< User-defined commands
+	User = 'U',       ///< User format control
+	Waypoint = 'W',   ///< Way point/site commands (LX200GPS)
 	Extended = 'X',   ///< Extended OAT-specific commands
+	Help = '?',       ///< Help commands (LX200GPS/LX16")
 	Unknown = 0       ///< Unrecognized command
 };
 

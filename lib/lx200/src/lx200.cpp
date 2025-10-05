@@ -86,23 +86,9 @@ std::optional<Command> ParserState::get_command() noexcept
     std::string_view name, params;
     parse_command_parts(name, params);
     
-    // Identify command family based on full command name
-    CommandFamily family = CommandFamily::Unknown;
-    
-    // Special cases for date/time commands (semantic grouping)
-    // GET commands (G*) are semantically DateTime queries
-    // SET commands (S*) with parameters use default SetInfo family
-    if (name == "GC" || name == "GL" || name == "Ga" || name == "Gc" || name == "H") {
-        family = CommandFamily::DateTime;
-    }
-    // SL, SG, SH, SC without parameters would be DateTime, but LX200 protocol
-    // always uses them WITH parameters, so they use SetInfo family below
-    // Default: use first character mapping
-    // NOTE: :gT# (lowercase g) is GPS family, not GetInfo
-    // (:GT# with uppercase G is GetInfo - "Get tracking rate")
-    else {
-        family = identify_family(name.empty() ? '\0' : name[0]);
-    }
+    // Identify command family by first character
+    // Case-sensitive mapping (e.g., 'g' = GPS, 'G' = GetInfo)
+    CommandFamily family = identify_family(name.empty() ? '\0' : name[0]);
     
     // Create command
     Command cmd{
@@ -126,23 +112,27 @@ CommandFamily ParserState::identify_family(char first_char) const noexcept
     switch (first_char) {
         case 'A': return CommandFamily::Alignment;
         case 'B': return CommandFamily::Reticle;
-        case 'C': return CommandFamily::DateTime;
+        case 'C': return CommandFamily::Sync;
         case 'D': return CommandFamily::Distance;
+        case 'f': return CommandFamily::Fan;
         case 'F': return CommandFamily::Focus;
         case 'G': return CommandFamily::GetInfo;
         case 'g': return CommandFamily::GPS;
         case 'h': return CommandFamily::Home;
-        case 'H': return CommandFamily::DateTime;  // :H# is time format toggle (handled specially above)
+        case 'H': return CommandFamily::HourFormat;
         case 'I': return CommandFamily::Initialize;
         case 'L': return CommandFamily::Library;
         case 'M': return CommandFamily::Movement;
         case 'P': return CommandFamily::Precision;
         case 'Q': return CommandFamily::Quit;
+        case 'r': return CommandFamily::Derotator;
         case 'R': return CommandFamily::Rate;
         case 'S': return CommandFamily::SetInfo;
         case 'T': return CommandFamily::Tracking;
         case 'U': return CommandFamily::User;
+        case 'W': return CommandFamily::Waypoint;
         case 'X': return CommandFamily::Extended;
+        case '?': return CommandFamily::Help;
         default:  return CommandFamily::Unknown;
     }
 }
