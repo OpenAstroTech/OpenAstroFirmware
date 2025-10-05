@@ -16,7 +16,8 @@
 		"terminal.integrated.defaultProfile.linux": "zsh",
 		"files.associations": {
 			"string_view": "cpp",
-			"array": "cpp"
+			"array": "cpp",
+			"optional": "cpp"
 		}
 	}
 }

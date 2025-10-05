@@ -110,7 +110,7 @@ ZTEST(lx200, test_focus_commands)
 }
 
 /**
- * @brief Test GetInfo command family (G lowercase g)
+ * @brief Test GetInfo command family (uppercase G)
  */
 ZTEST(lx200, test_getinfo_commands)
 {
@@ -124,14 +124,73 @@ ZTEST(lx200, test_getinfo_commands)
 	zassert_true(cmd.has_value(), "Should parse GR command");
 	zassert_equal(cmd->family, CommandFamily::GetInfo, "GR should be GetInfo family");
 
-	// :gT# - Get tracking rate
+	// :GC# - Get calendar date
 	parser.reset();
-	for (const char c : std::string_view(":gT#")) {
+	for (const char c : std::string_view(":GC#")) {
 		parser.feed_character(c);
 	}
 	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse GC command");
+	zassert_equal(cmd->family, CommandFamily::DateTime, "GC should be DateTime family");
+
+	// :GT# - Get tracking rate (uppercase G, not lowercase g)
+	parser.reset();
+	for (const char c : std::string_view(":GT#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse GT command");
+	zassert_equal(cmd->family, CommandFamily::GetInfo, "GT should be GetInfo family");
+}
+
+/**
+ * @brief Test GPS command family (lowercase g)
+ * 
+ * NOTE: According to LX200CommandSet.md Appendix B.2:
+ * - :gT# is "Set Mount Time from GPS" (OAT/LX200GPS)
+ * - This is a BLOCKING call that attempts GPS sync for 2 minutes
+ * - Returns: 1 if data set, 0 if timeout
+ * - NOT the same as :GT# (Get tracking rate)
+ */
+ZTEST(lx200, test_gps_commands)
+{
+	ParserState parser;
+
+	// :gT# - Set mount time from GPS (lowercase g = GPS family)
+	for (const char c : std::string_view(":gT#")) {
+		parser.feed_character(c);
+	}
+	auto cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse gT command");
-	zassert_equal(cmd->family, CommandFamily::GetInfo, "gT should be GetInfo family");
+	zassert_equal(cmd->family, CommandFamily::GPS, "gT should be GPS family");
+
+	// :gTnnn# - Set mount time from GPS with timeout [OAT Extension]
+	parser.reset();
+	for (const char c : std::string_view(":gT5000#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse gTnnn command");
+	zassert_equal(cmd->family, CommandFamily::GPS, "gTnnn should be GPS family");
+	zassert_mem_equal(cmd->parameters.data(), "5000", 4, "Timeout parameter should be extracted");
+
+	// :g+# - Turn on GPS power [LX200GPS]
+	parser.reset();
+	for (const char c : std::string_view(":g+#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse g+ command");
+	zassert_equal(cmd->family, CommandFamily::GPS, "g+ should be GPS family");
+
+	// :g-# - Turn off GPS power [LX200GPS]
+	parser.reset();
+	for (const char c : std::string_view(":g-#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse g- command");
+	zassert_equal(cmd->family, CommandFamily::GPS, "g- should be GPS family");
 }
 
 /**
@@ -289,15 +348,58 @@ ZTEST(lx200, test_user_commands)
 }
 
 /**
- * @brief Test Library and GPS command families (X, W)
+ * @brief Test Library command family (L)
+ * 
+ * NOTE: Library commands for object selection (Messier, NGC, etc.)
+ * According to LX200CommandSet.md:
+ * - :LMNNNN# - Select Messier object
+ * - :LI# - Get object information
+ * - :LB# - Find previous object
+ * - :LN# - Find next object
  */
-ZTEST(lx200, test_library_gps_commands)
+ZTEST(lx200, test_library_commands)
 {
 	ParserState parser;
 
-	// Test Library command family would go here
-	// Test GPS command family would go here
-	// These are less common and may be implemented later
+	// :LI# - Get Object Information
+	for (const char c : std::string_view(":LI#")) {
+		parser.feed_character(c);
+	}
+	auto cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse LI command");
+	zassert_equal(cmd->family, CommandFamily::Library, "LI should be Library family");
+
+	// :LMNNNN# - Set Messier object
+	parser.reset();
+	for (const char c : std::string_view(":LM0031#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse LM command");
+	zassert_equal(cmd->family, CommandFamily::Library, "LM should be Library family");
+	zassert_mem_equal(cmd->parameters.data(), "0031", 4, "Messier number should be extracted");
+}
+
+/**
+ * @brief Test Extended OAT command family (X)
+ * 
+ * NOTE: According to LX200CommandSet.md Appendix B.9:
+ * - 50+ OAT-specific commands starting with :X
+ * - Used by OATControl PC application
+ * - Examples: :XFR# (factory reset), :XGM# (get mount config),
+ *   :XGB# (get backlash), :XSB# (set backlash), etc.
+ */
+ZTEST(lx200, test_extended_oat_commands)
+{
+	ParserState parser;
+
+	// :XFR# - Factory Reset [OAT Extension]
+	for (const char c : std::string_view(":XFR#")) {
+		parser.feed_character(c);
+	}
+	auto cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse XFR command");
+	zassert_equal(cmd->family, CommandFamily::Extended, "XFR should be Extended family");
 }
 
 /**

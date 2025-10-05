@@ -94,11 +94,9 @@ std::optional<Command> ParserState::get_command() noexcept
         name == "SC" || name == "SL" || name == "SG" || name == "SH") {
         family = CommandFamily::DateTime;
     }
-    // Special case: gT (update time from GPS) is GetInfo, not GPS
-    else if (name == "gT") {
-        family = CommandFamily::GetInfo;
-    }
     // Default: use first character mapping
+    // NOTE: :gT# (lowercase g) is GPS family, not GetInfo
+    // (:GT# with uppercase G is GetInfo - "Get tracking rate")
     else {
         family = identify_family(name.empty() ? '\0' : name[0]);
     }
