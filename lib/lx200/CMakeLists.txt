@@ -10,9 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # C++20 source files for LX200 protocol implementation
 zephyr_library_sources_ifdef(CONFIG_LX200
-  lx200.cpp
-  parser.cpp
-  coordinates.cpp
+  src/lx200.cpp
+  src/coordinates.cpp
 )
 
 # Public include directory

@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file lx200.cpp
+ * @brief LX200 Protocol Implementation
+ * 
+ * Complete implementation of the LX200 telescope protocol parser,
+ * including command parsing and state management.
+ */
+
 #include <lx200/lx200.hpp>
 #include <cstring>
 
