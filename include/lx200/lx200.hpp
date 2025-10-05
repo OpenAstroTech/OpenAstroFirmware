@@ -114,7 +114,79 @@ struct Unit {};
 /**
  * @brief Functional Result<T> type based on std::variant
  * 
- * Type-safe error handling that replaces error codes.
+ * Provides Rust-style error handling without exceptions or error codes.
+ * A Result<T> either contains a successful value (Ok) or an error (Err).
+ * 
+ * Key Benefits:
+ * - Type-safe: Cannot accidentally ignore errors
+ * - Composable: Chain operations with match()
+ * - Zero-cost: No exceptions or dynamic allocation
+ * - Explicit: Error handling is visible in function signatures
+ * 
+ * @par Basic Usage:
+ * @code
+ * // Function returns Result instead of throwing or returning error codes
+ * Result<RACoordinate> coord = parse_ra("12:34:56", PrecisionMode::High);
+ * 
+ * // Check if successful
+ * if (coord.is_ok()) {
+ *     RACoordinate ra = coord.value();
+ *     LOG_INF("RA: %02d:%02d:%02d", ra.hours, ra.minutes, ra.seconds);
+ * } else {
+ *     ParseError err = coord.error();
+ *     LOG_ERR("Parse failed: %d", static_cast<int>(err));
+ * }
+ * @endcode
+ * 
+ * @par Using value_or() for Defaults:
+ * @code
+ * // Provide fallback value on error
+ * RACoordinate ra = parse_ra(input, mode).value_or(RACoordinate{0, 0, 0});
+ * @endcode
+ * 
+ * @par Pattern Matching with match():
+ * @code
+ * // Handle both cases functionally
+ * auto message = parse_ra(input, mode).match(
+ *     [](const RACoordinate& ra) {
+ *         return format_ra(ra);  // Success path
+ *     },
+ *     [](ParseError err) {
+ *         return std::string("Invalid");  // Error path
+ *     }
+ * );
+ * @endcode
+ * 
+ * @par Chaining Operations:
+ * @code
+ * // Parse and validate in one expression
+ * auto result = parse_ra(input, mode).match(
+ *     [](const RACoordinate& ra) -> Result<std::string> {
+ *         if (RACoordinate::is_valid(ra.hours, ra.minutes, ra.seconds)) {
+ *             return Ok(format_ra(ra));
+ *         }
+ *         return Err<std::string>(ParseError::OutOfRange);
+ *     },
+ *     [](ParseError err) -> Result<std::string> {
+ *         return Err<std::string>(err);
+ *     }
+ * );
+ * @endcode
+ * 
+ * @par Creating Results:
+ * @code
+ * // Use factory functions for clarity
+ * Result<int> success = Ok(42);
+ * Result<int> failure = Err<int>(ParseError::InvalidFormat);
+ * VoidResult void_ok = Ok();  // For void operations
+ * VoidResult void_err = Err<Unit>(ParseError::General);
+ * @endcode
+ * 
+ * @tparam T The type of the success value
+ * 
+ * @see Ok() - Factory for successful Results
+ * @see Err() - Factory for error Results
+ * @see VoidResult - Typedef for Result<Unit> (void operations)
  */
 template<typename T>
 class Result {
@@ -122,34 +194,105 @@ private:
 	std::variant<T, ParseError> data_;
 	
 public:
+	/// Construct Result with success value (copy)
 	constexpr explicit Result(const T& value) noexcept : data_(value) {}
+	
+	/// Construct Result with success value (move)
 	constexpr explicit Result(T&& value) noexcept : data_(std::move(value)) {}
+	
+	/// Construct Result with error
 	constexpr explicit Result(ParseError error) noexcept : data_(error) {}
 	
+	/**
+	 * @brief Check if Result contains a success value
+	 * @return true if Ok, false if Err
+	 */
 	constexpr bool is_ok() const noexcept {
 		return std::holds_alternative<T>(data_);
 	}
 	
+	/**
+	 * @brief Check if Result contains an error
+	 * @return true if Err, false if Ok
+	 */
 	constexpr bool is_error() const noexcept {
 		return std::holds_alternative<ParseError>(data_);
 	}
 	
+	/**
+	 * @brief Extract the success value (const)
+	 * @return Reference to the contained value
+	 * @throws std::bad_variant_access if Result is an error
+	 * @note Always check is_ok() before calling, or use value_or() for safety
+	 */
 	constexpr const T& value() const {
 		return std::get<T>(data_);
 	}
 	
+	/**
+	 * @brief Extract the success value (mutable)
+	 * @return Mutable reference to the contained value
+	 * @throws std::bad_variant_access if Result is an error
+	 * @note Always check is_ok() before calling, or use value_or() for safety
+	 */
 	constexpr T& value() {
 		return std::get<T>(data_);
 	}
 	
+	/**
+	 * @brief Extract the error value
+	 * @return The contained ParseError
+	 * @throws std::bad_variant_access if Result is Ok
+	 * @note Always check is_error() before calling
+	 */
 	constexpr ParseError error() const {
 		return std::get<ParseError>(data_);
 	}
 	
+	/**
+	 * @brief Extract value or return default on error
+	 * @param default_value Value to return if Result is an error
+	 * @return The contained value if Ok, or default_value if Err
+	 * 
+	 * @par Example:
+	 * @code
+	 * // Safe extraction without checking
+	 * RACoordinate ra = parse_ra(input, mode).value_or(RACoordinate{0, 0, 0});
+	 * @endcode
+	 */
 	constexpr T value_or(const T& default_value) const {
 		return is_ok() ? value() : default_value;
 	}
 	
+	/**
+	 * @brief Pattern match on Result with callbacks
+	 * @param ok_fn Callback for success case: T -> R
+	 * @param err_fn Callback for error case: ParseError -> R
+	 * @return Result of calling the appropriate callback
+	 * 
+	 * This is the functional way to handle Results, similar to Rust's match.
+	 * Both callbacks must return the same type R.
+	 * 
+	 * @par Example - Simple Logging:
+	 * @code
+	 * parse_ra(input, mode).match(
+	 *     [](const RACoordinate& ra) {
+	 *         LOG_INF("Parsed: %02d:%02d:%02d", ra.hours, ra.minutes, ra.seconds);
+	 *     },
+	 *     [](ParseError err) {
+	 *         LOG_ERR("Parse error: %d", static_cast<int>(err));
+	 *     }
+	 * );
+	 * @endcode
+	 * 
+	 * @par Example - Transforming Results:
+	 * @code
+	 * std::string message = parse_ra(input, mode).match(
+	 *     [](const RACoordinate& ra) { return format_ra(ra); },
+	 *     [](ParseError err) { return std::string("ERROR"); }
+	 * );
+	 * @endcode
+	 */
 	template<typename OkFn, typename ErrFn>
 	constexpr auto match(OkFn&& ok_fn, ErrFn&& err_fn) const {
 		return is_ok() ? ok_fn(value()) : err_fn(error());
@@ -158,28 +301,90 @@ public:
 
 /**
  * @brief Result type for void operations
+ * 
+ * Use this for functions that can fail but don't return a value.
+ * Equivalent to Result<Unit>.
+ * 
+ * @par Example:
+ * @code
+ * VoidResult validate_input(const char* input) {
+ *     if (input == nullptr) {
+ *         return Err<Unit>(ParseError::InvalidFormat);
+ *     }
+ *     return Ok();  // Success with no value
+ * }
+ * @endcode
  */
 using VoidResult = Result<Unit>;
 
 /**
  * @brief Factory for successful Results
+ * 
+ * Creates a Result<T> containing a success value. Use this instead of
+ * calling Result<T> constructor directly for better type inference.
+ * 
+ * @param value The success value to wrap
+ * @return Result<T> containing the value
+ * 
+ * @par Example - With Value:
+ * @code
+ * Result<int> parse_number(const char* str) {
+ *     int val = atoi(str);
+ *     if (val == 0 && str[0] != '0') {
+ *         return Err<int>(ParseError::InvalidFormat);
+ *     }
+ *     return Ok(val);  // Type deduced as Result<int>
+ * }
+ * @endcode
+ * 
+ * @par Example - Void (No Value):
+ * @code
+ * VoidResult check_bounds(int value) {
+ *     if (value < 0 || value > 100) {
+ *         return Err<Unit>(ParseError::OutOfRange);
+ *     }
+ *     return Ok();  // Success with no value
+ * }
+ * @endcode
  */
 template<typename T>
 constexpr Result<std::remove_reference_t<T>> Ok(const T& value) noexcept {
 	return Result<std::remove_reference_t<T>>(value);
 }
 
+/// Factory for successful Results (move version)
 template<typename T>
 constexpr Result<std::remove_reference_t<T>> Ok(T&& value) noexcept {
 	return Result<std::remove_reference_t<T>>(std::forward<T>(value));
 }
 
+/// Factory for successful void Results
 constexpr VoidResult Ok() noexcept {
 	return VoidResult(Unit{});
 }
 
 /**
  * @brief Factory for error Results
+ * 
+ * Creates a Result<T> containing an error. The type T must be explicitly
+ * specified since it cannot be inferred from the error value.
+ * 
+ * @tparam T The success type (even though we're creating an error)
+ * @param error The error to wrap
+ * @return Result<T> containing the error
+ * 
+ * @par Example:
+ * @code
+ * Result<RACoordinate> parse_ra(const char* str) {
+ *     if (str == nullptr) {
+ *         return Err<RACoordinate>(ParseError::InvalidFormat);
+ *     }
+ *     // ... parsing logic ...
+ *     return Ok(coordinate);
+ * }
+ * @endcode
+ * 
+ * @note Type must be specified: Err<int>(error), not Err(error)
  */
 template<typename T>
 constexpr Result<std::remove_reference_t<T>> Err(ParseError error) noexcept {
