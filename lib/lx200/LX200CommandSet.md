@@ -1,47 +1,58 @@
 # Meade Telescope Serial Command Protocol
 
-**Revision L**  
-*9 October 2002*
+**Revision L (Meade LX200) + OpenAstroTech Extensions**  
+*Original: 9 October 2002*  
+*OAT Extensions: Current as of Firmware V1.13.12*
 
 ## Introduction
 
-This paper documents the Meade Telescope Serial Control Protocol utilized to remotely command and control Meade Telescopes. This command language contains a core of common commands supported by all telescope. Due to different implementation and technological advances the command has extension that are not supported by all model. The differences are noted in the descriptive text for the commands. Finally, there are a series of new commands proposed for the LX200GPS. These commands are indicated in the Appendix A at the end of this document.
+This document combines two protocol specifications:
+
+1. **Meade LX200 Serial Control Protocol** - The industry-standard protocol for telescope control, compatible with ASCOM, INDI, N.I.N.A., and SkySafari
+2. **OpenAstroTech (OAT) Extensions** - Additional commands specific to the OpenAstroTracker and OpenAstroMount firmware
+
+The Meade protocol contains a core of common commands supported by all telescopes. Due to different implementations and technological advances, some commands are not supported by all models. The differences are noted in the descriptive text.
 
 As an extension to the Telescope Protocol beginning with the LX200GPS, a possible response to any command is ASCII NAK (0x15). Should the telescope control chain be busy and unable to accept an process the command, a NAK will be sent within 10 msec of the receipt of the '#' terminating the command. In this event, the controller should wait a reasonable interval and retry the command.
 
+**OpenAstroTech Note**: OAT firmware implements a subset of Meade LX200 commands plus extensive OAT-specific extensions (primarily using the `:X` prefix). These extensions provide advanced features like Hall sensor homing, digital level support, backlash compensation, and detailed mount status queries.
+
 ## Command Support Matrix
 
-| Command Designator Symbol | Command Group | AutoStar | LX200<16" | LX 16" | LX200GPS |
-|---------------------------|---------------|----------|-----------|--------|----------|
-| `<ACK>` | Alignment Query | x | p | p | x |
-| A | Alignment* | x | - | p | x |
-| $B | Active Backlash | - | - | - | x |
-| B | Reticule Control* | p | p | - | p |
-| C | Sync Control | x | x | p | - |
-| D | Distance Bars | p | p | x | p |
-| f | Fan* | - | - | x | x |
-| F | Focus Control Commands | x | x | x | x |
-| g | GPS Commands | - | - | - | x |
-| G | Get Information | x | x | x | x |
-| h | Home Position Commands* | - | p | x | x |
-| H | Hour | p | p | x | x |
-| I | Initialize Telescope | - | - | p | p |
-| L | Library | x | x | x | x |
-| M | Movement | x | x | x | x |
-| P | High Precision | p | p | x | x |
-| $Q | Smart Drive Control* | - | - | p | - |
-| Q | Quit Command | x | x | p | p |
-| r | Field De-rotator | - | - | x | - |
-| R | Rate Control | x | x | x | x |
-| S | Set Information | x | x | x | x |
-| T | Tracking Frequency | x | x | x | x |
-| U | User Format Control | p | p | x | x |
-| W | Way point (Site) | - | - | p | p |
-| ? | Help Commands | - | - | x | x |
+| Command Designator Symbol | Command Group | AutoStar | LX200<16" | LX 16" | LX200GPS | OAT |
+|---------------------------|---------------|----------|-----------|--------|----------|-----|
+| `<ACK>` | Alignment Query | x | p | p | x | - |
+| A | Alignment* | x | - | p | x | - |
+| $B | Active Backlash | - | - | - | x | - |
+| B | Reticule Control* | p | p | - | p | - |
+| C | Sync Control | x | x | p | - | x |
+| D | Distance Bars | p | p | x | p | x |
+| f | Fan* | - | - | x | x | - |
+| F | Focus Control Commands | x | x | x | x | x |
+| g | GPS Commands | - | - | - | x | x |
+| G | Get Information | x | x | x | x | x |
+| h | Home Position Commands* | - | p | x | x | x |
+| H | Hour | p | p | x | x | - |
+| I | Initialize Telescope | - | - | p | p | x |
+| L | Library | x | x | x | x | - |
+| M | Movement | x | x | x | x | x |
+| P | High Precision | p | p | x | x | - |
+| $Q | Smart Drive Control* | - | - | p | - | - |
+| Q | Quit Command | x | x | p | p | x |
+| r | Field De-rotator | - | - | x | - | - |
+| R | Rate Control | x | x | x | x | x |
+| S | Set Information | x | x | x | x | x |
+| T | Tracking Frequency | x | x | x | x | - |
+| U | User Format Control | p | p | x | x | - |
+| W | Way point (Site) | - | - | p | p | - |
+| X | **OAT Extensions** | - | - | - | - | **x** |
+| ? | Help Commands | - | - | x | x | - |
 
 **Notes:**
 - Commands accepted by the telescopes are shown in the table above indicated by an "x" entry. This means that the telescope will accept these commands and respond with a syntactically valid response where required.
 - A "p" indicated only a subset of this command class is supported. Due to the differing implementations of the telescopes, some of the commands may provide static responses or may do nothing in response to the command. See the detailed description of the commands below to determine the exact behavior.
+- **OAT column**: Indicates support in OpenAstroTracker/OpenAstroMount firmware V1.13.12+
+- **X commands**: Extensive OAT-specific extensions for advanced mount control (50+ commands)
 
 ## Command Details
 
@@ -1015,3 +1026,602 @@ The following commands are extensions specific to the LX200GPS:
 | `:REDD.D#` | Programmable Slew Rates |
 | `:RgSS.S#` | Programmable Guiding Rates |
 | `:SBn#` | Set Baud Rate |
+
+## Appendix B: OpenAstroTech Extensions
+
+**Current as of Firmware V1.13.12**
+
+OpenAstroTech firmware implements a superset of the Meade LX200 protocol with extensive custom extensions. These extensions provide advanced features for DIY telescope mount control.
+
+### B.1 - OAT Sync Control (Enhanced)
+
+#### `:CM#` Synchronize Declination and Right Ascension
+
+This tells the scope what it is currently pointing at. The scope synchronizes to the current target coordinates.
+
+Returns: `NONE#`
+
+**Note**: Set target coordinates first with `:Sd#` and `:Sr#`
+
+#### `:SYsDD*MM:SS.HH:MM:SS#` Synchronize to Exact Coordinates [OAT Extension]
+
+This tells the scope the exact coordinates it is currently pointing at. These coordinates become the new current RA/DEC coordinates of the mount.
+
+Returns:
+- `1` - If successfully set
+- `0` - Otherwise
+
+Parameters:
+- `s` - Sign (+ or -)
+- `DD` - Degrees
+- `MM` - Minutes
+- `SS` - Seconds
+- `HH` - Hours
+
+### B.2 - OAT GPS Commands
+
+**Note**: `:gT#` in OAT differs from Meade LX200GPS implementation.
+
+#### `:gT#` Set Mount Time from GPS [OAT]
+
+Attempts to set the mount time and location from GPS for 2 minutes. This is a **blocking call** - no other activities take place (except tracking if interrupt-driven).
+
+Returns:
+- `1` - If the data was set
+- `0` - If not (timed out)
+
+**Note**: Use `:Gt#` and `:Gg#` to retrieve Lat and Long after successful GPS sync.
+
+#### `:gTnnn#` Set Mount Time with Timeout [OAT Extension]
+
+Attempts to set the mount time and location from GPS with a custom timeout. This is also blocking but by using a low timeout, you can avoid long pauses.
+
+Returns:
+- `1` - If the data was set
+- `0` - If not (timed out)
+
+Parameters:
+- `nnn` - Integer defining the number of milliseconds to wait for GPS to get a bearing
+
+### B.3 - OAT Get Extensions
+
+#### `:GIS#` Get DEC or RA Slewing Status [OAT Extension]
+
+Returns:
+- `1#` - If either RA or DEC is slewing
+- `0#` - If not
+
+#### `:GIT#` Get Tracking Status [OAT Extension]
+
+Returns:
+- `1#` - If tracking is on
+- `0#` - If not
+
+#### `:GIG#` Get Guiding Status [OAT Extension]
+
+Returns:
+- `1#` - If currently guiding
+- `0#` - If not
+
+#### `:GX#` Get Mount Status [OAT Extension]
+
+Returns detailed mount status as comma-delimited string.
+
+Returns: `Idle,--T--,11219,0,927,071906,+900000,,#`
+
+Parameters (comma-separated):
+- [0] Mount status: 'Idle', 'Parked', 'Parking', 'Guiding', 'SlewToTarget', 'FreeSlew', 'ManualSlew', 'Tracking', 'Homing'
+- [1] Motion state (6 characters, see below)
+- [2] RA stepper position
+- [3] DEC stepper position
+- [4] Tracking stepper position
+- [5] Current RA coordinate
+- [6] Current DEC coordinate
+- [7] FOC stepper position (if FOC enabled, else empty)
+
+**Motion State Characters**:
+- Position 1: RA slewing ('R' = East, 'r' = West, '-' = stopped)
+- Position 2: DEC slewing ('d' = North, 'D' = South, '-' = stopped)
+- Position 3: TRK slewing ('T' = Tracking, '-' = stopped)
+- Position 4: AZ slewing ('Z' or 'z' = adjusting, '-' = stopped)
+- Position 5: ALT slewing ('A' or 'a' = adjusting, '-' = stopped)
+- Position 6: FOC slewing ('F' or 'f' = adjusting, '-' = stopped)
+
+### B.4 - OAT Movement Extensions
+
+#### `:MGdnnnn#` Run Guide Pulse [OAT Extension]
+
+Runs the RA or DEC steppers at an increased/decreased speed (RA) or constant speed (DEC) for a short period. Used for autoguiding.
+
+Returns: `1`
+
+Parameters:
+- `d` - Direction: 'N', 'E', 'W', or 'S'
+- `nnnn` - Duration in milliseconds
+
+#### `:MTs#` Set Tracking Mode [OAT Extension]
+
+Turns the scope's tracking mode on or off.
+
+Returns: `1`
+
+Parameters:
+- `s` - `1` to turn on Tracking, `0` to turn it off
+
+#### `:Mc#` Start Slewing [OAT Extension]
+
+Starts slewing the mount in the given direction. Must issue a stop command (`:Qc#` where 'c' is the same direction, or `:Q#` to stop all) to stop it.
+
+Returns: Nothing
+
+Parameters:
+- `c` - Direction: 'n', 'e', 'w', or 's'
+
+#### `:MXxnnnnn#` Move Stepper [OAT Extension]
+
+Moves one of the steppers by the given number of steps and returns immediately. Steps can be positive or negative.
+
+Returns:
+- `1` - If successfully scheduled
+- `0` - Otherwise
+
+Parameters:
+- `x` - Stepper to move: 'r' (RA), 'd' (DEC), 'f' (FOC), 'z' (AZ), 't' (ALT)
+- `nnnnn` - Number of steps (signed integer)
+
+#### `:MHRxn#` Home RA Stepper via Hall Sensor [OAT Extension]
+
+Attempts to find the Hall sensor and home the RA ring accordingly.
+
+Returns:
+- `1` - If search is started
+- `0` - If homing has not been enabled in config
+
+Parameters:
+- `x` - Direction to start search: 'R' (CCW) or 'L' (CW)
+- `n` - (Optional) Maximum degrees to move while searching (5-75°, default 30°)
+
+**Behavior**:
+1. Moves up to 30° (or specified) in initial direction
+2. If no sensor found, moves 60° (2x) in opposite direction
+3. If sensor found, centers on trigger range then applies home offset (`:XSHRnnnn#`)
+4. If sensor already triggered, moves off trigger (max 15°) before searching
+
+#### `:MHDxn#` Home DEC Stepper via Hall Sensor [OAT Extension]
+
+Attempts to find the Hall sensor and home the DEC axis accordingly.
+
+Returns:
+- `1` - If search is started
+- `0` - If homing has not been enabled in config
+
+Parameters:
+- `x` - Direction to start search: 'U' (up) or 'D' (down)
+- `n` - (Optional) Maximum degrees to move while searching (5-75°, default 30°)
+
+**Behavior**: Same as `:MHR#` but for DEC axis.
+
+#### `:MAZn.nn#` Move Azimuth [OAT Extension]
+
+If the scope supports automated azimuth operation, move azimuth by n.nn arcminutes.
+
+Returns: Nothing
+
+Parameters:
+- `n.nn` - Signed floating point number representing arcminutes to move left/right
+
+#### `:MALn.nn#` Move Altitude [OAT Extension]
+
+If the scope supports automated altitude operation, move altitude by n.nn arcminutes.
+
+Returns: Nothing
+
+Parameters:
+- `n.nn` - Signed floating point number representing arcminutes to raise/lower
+
+#### `:MAAH#` Move Azimuth and Altitude to Home [OAT Extension]
+
+If the scope supports automated azimuth and altitude operations, move AZ and ALT axes to their zero positions.
+
+Returns: `1`
+
+### B.5 - OAT Set Extensions
+
+#### `:SHHH:MM#` Set HA (Hour Angle of Polaris) [OAT Extension]
+
+Sets the scope's HA, which should be that of Polaris.
+
+Returns:
+- `1` - If successfully set
+- `0` - Otherwise
+
+Parameters:
+- `HH` - Hours
+- `MM` - Minutes
+
+#### `:SHP#` Set Home Point [OAT Extension]
+
+Sets the current orientation of the scope as its home point.
+
+Returns: `1`
+
+#### `:SHLHH:MM#` Set LST Time [OAT Extension]
+
+Sets the scope's LST (and HA).
+
+Returns:
+- `1` - If successfully set
+- `0` - Otherwise
+
+Parameters:
+- `HH` - Hours
+- `MM` - Minutes
+
+### B.6 - OAT Home/Park Extensions
+
+#### `:hU#` Unpark Scope [OAT Extension]
+
+Unparks the scope (currently simply turns on tracking).
+
+Returns: `1`
+
+#### `:hZ#` Set Home Position for AZ and ALT Axes [OAT Extension]
+
+If the mount supports AZ and ALT axes, this sets their positions to 0 and stores in persistent storage.
+
+Returns: `1`
+
+### B.7 - OAT Quit Extensions
+
+#### `:Qq#` Disconnect and Quit Control Mode [OAT Extension]
+
+Quits Serial Control mode and starts tracking.
+
+Returns: Nothing
+
+### B.8 - OAT Focus Extensions
+
+#### `:Fp#` Get Focuser Position [OAT Extension]
+
+Get the current position of the focus stepper motor.
+
+Returns: `nnn#` where `nnn` is the current position
+
+#### `:FPnnn#` Set Focuser Position [OAT Extension]
+
+Sets the current position of the focus stepper motor (does not move stepper).
+
+Returns: `1`
+
+Parameters:
+- `nnn` - New position of the stepper
+
+#### `:FB#` Get Focuser State [OAT Extension]
+
+Gets the state of the focuser stepper.
+
+Returns:
+- `0` - Focuser is idle
+- `1` - Focuser is moving
+
+### B.9 - OAT Extra Commands (X Family)
+
+The X command family provides extensive OAT-specific functionality used by the OATControl PC application.
+
+#### `:XFR#` Perform Factory Reset [OAT Extension]
+
+Clears all EEPROM settings.
+
+Returns: `1#`
+
+#### `:XDnnn#` Run Drift Alignment [OAT Extension]
+
+Runs a drift alignment procedure where the mount slews east, pauses, slews west and pauses. This is a **blocking call**.
+
+Returns: Nothing
+
+Parameters:
+- `nnn` - Number of seconds the entire alignment should take
+
+**Note**: Only supported if `SUPPORT_DRIFT_ALIGNMENT` is enabled in firmware.
+
+#### `:XL0#` / `:XL1#` Digital Level Control [OAT Extension]
+
+Turn digital level off (`:XL0#`) or on (`:XL1#`).
+
+Returns:
+- `1#` - If successful
+- `0#` - If there is no Digital Level
+
+#### `:XLGR#` Get Digital Level Reference [OAT Extension]
+
+Gets the reference pitch and roll values (values when mount is level).
+
+Returns:
+- `<pitch>,<roll>#` - If Digital Level present
+- `0#` - If no Digital Level
+
+#### `:XLGC#` Get Digital Level Current Values [OAT Extension]
+
+Gets the current pitch and roll values.
+
+Returns:
+- `<pitch>,<roll>#` - If Digital Level present
+- `0#` - If no Digital Level
+
+#### `:XLGT#` Get Digital Level Temperature [OAT Extension]
+
+Get current temperature in Celsius.
+
+Returns:
+- `<temp>#` - If Digital Level present
+- `0#` - If no Digital Level
+
+#### `:XLSR#` / `:XLSP#` Set Digital Level Reference [OAT Extension]
+
+Sets the reference roll (`:XLSR#`) or pitch (`:XLSP#`) value (value at which mount is level).
+
+Returns:
+- `1#` - If successful
+- `0#` - If no Digital Level
+
+#### `:XGAA#` Get AZ and ALT Positions [OAT Extension]
+
+Get current position in steps of AZ and ALT axes.
+
+Returns: `azpos|altpos#` (returns 0 for disabled axes)
+
+#### `:XGAH#` Get Auto Homing State [OAT Extension]
+
+Get current state of RA and DEC autohoming status.
+
+Returns:
+- `rastate|decstate#` - If either axis enabled
+- `|#` - If no autohoming enabled
+
+**States During Homing**: `MOVE_OFF`, `MOVING_OFF`, `STOP_AT_TIME`, `WAIT_FOR_STOP`, `START_FIND_START`, `FINDING_START`, `FINDING_START_REVERSE`, `FINDING_END`, `RANGE_FOUND`
+
+#### `:XGB#` Get Backlash Correction Steps [OAT Extension]
+
+Get the number of steps the RA stepper needs to overshoot and backtrack when slewing east.
+
+Returns: `integer#`
+
+#### `:XGCn.nn*m.mm#` Get Stepper Positions for Target [OAT Extension]
+
+Get the positions of stepper motors when pointed at given coordinates.
+
+Returns: `ralong,declong#`
+
+Parameters:
+- `n.nn` - RA coordinate (0.0 - 23.999)
+- `m.mm` - DEC coordinate (-90.00 - +90.00)
+
+#### `:XGR#` / `:XGD#` Get Steps per Degree [OAT Extension]
+
+Get the number of steps per degree for RA (`:XGR#`) or DEC (`:XGD#`) stepper.
+
+Returns: `float#`
+
+#### `:XGDLx#` Get DEC Limits [OAT Extension]
+
+Get lower, upper, or both limits for DEC stepper in degrees.
+
+Returns:
+- `float#` - If x is 'U' (upper) or 'L' (lower)
+- `float|float#` - If x is omitted (both limits)
+
+#### `:XGS#` Get Tracking Speed Adjustment [OAT Extension]
+
+Get the adjustment factor used to speed up (>1.0) or slow down (<1.0) tracking speed.
+
+Returns: `float#`
+
+#### `:XGST#` Get Remaining Safe Time [OAT Extension]
+
+Get the number of hours before the RA ring reaches its end.
+
+Returns: `float#`
+
+#### `:XGT#` Get Tracking Speed [OAT Extension]
+
+Get the absolute tracking speed of the mount.
+
+Returns: `float#`
+
+#### `:XGH#` Get HA (Hour Angle of Polaris) [OAT Extension]
+
+Get the current HA of Polaris that the mount thinks it is.
+
+Returns: `HHMMSS#`
+
+#### `:XGHR#` / `:XGHD#` Get Homing Offset [OAT Extension]
+
+Get the RA (`:XGHR#`) or DEC (`:XGHD#`) ring homing offset in steps from Hall sensor center.
+
+Returns: `n#` - Number of steps
+
+#### `:XGHS#` Get Hemisphere [OAT Extension]
+
+Get the hemisphere that OAT currently assumes it is operating in (set via latitude).
+
+Returns:
+- `N#` - Northern hemisphere
+- `S#` - Southern hemisphere
+
+#### `:XGM#` Get Mount Configuration Settings [OAT Extension]
+
+Returns comprehensive mount configuration.
+
+Returns: `<board>,<RA Stepper Info>,<DEC Stepper Info>,<GPS info>,<AzAlt info>,<Gyro info>,<Display info>,<Focuser info>,<RAHallSensor info>,<Endswitch info>#`
+
+Parameters:
+- `<board>` - Mega, ESP32, or MKS
+- `<Stepper Info>` - Pipe-delimited: Motor type|Pulley Teeth|Steps per revolution
+- `<GPS info>` - NO_GPS or GPS
+- `<AzAlt info>` - NO_AZ_ALT, AUTO_AZ_ALT, AUTO_AZ, or AUTO_ALT
+- `<Gyro info>` - NO_GYRO or GYRO
+- `<Display info>` - NO_LCD or LCD_display_type
+- `<Focuser info>` - NO_FOC or FOC
+- `<RAHallSensor info>` - NO_HSAH or HSAH
+- `<Endswitch info>` - NO_ENDSW, ENDS_RA, ENDSW_DEC, or ENDSW_RA_DEC
+
+Example: `ESP32,28BYJ|16|4096.00,28BYJ|16|4096.00,NO_GPS,NO_AZ_ALT,NO_GYRO,NO_LCD,NO_FOC,NO_ENDSW#`
+
+#### `:XGMS#` Get Mount Driver Configuration [OAT Extension]
+
+Returns driver configuration for RA and DEC.
+
+Returns: `<RA driver>,<RA slewMS>,<RA trackMS>|<DEC driver>,<DEC slewMS>,<DEC guideMS>|#`
+
+Parameters:
+- `<driver>` - TU (TMC2209UART), TS (TMC2209STANDALONE), A (A4983)
+- `<slewMS>` - Microstepping divider when slewing (1, 2, 4, 8, 15, 21, 64, 128, 256)
+- `<trackMS>` - Microstepping divider when tracking RA
+- `<guideMS>` - Microstepping divider when guiding DEC
+
+Example: `TU,8,64|TU,16,64|#`
+
+#### `:XGN#` Get Network Settings [OAT Extension]
+
+Gets current WiFi connection status (ESP boards only).
+
+Returns:
+- `1,<mode>,<status>,<hostname>,<ip>:<port>,<SSID>,<OATHostname>#` - If WiFi enabled
+- `0,#` - If WiFi not enabled
+
+#### `:XGL#` Get LST [OAT Extension]
+
+Get the current LST of the mount.
+
+Returns: `HHMMSS#`
+
+#### `:XSBn#` Set Backlash Correction Steps [OAT Extension]
+
+Sets the number of steps the RA stepper needs to overshoot and backtrack when slewing east.
+
+Returns: Nothing
+
+Parameters:
+- `n` - Number of steps
+
+#### `:XSHRnnn#` / `:XSHDnnn#` Set Homing Offset [OAT Extension]
+
+Set the RA (`:XSHR#`) or DEC (`:XSHD#`) ring homing offset from Hall sensor center.
+
+Returns: Nothing
+
+Parameters:
+- `nnn` - Positive or negative number of steps from Hall sensor center to actual home position
+
+#### `:XSRn.n#` / `:XSDn.n#` Set Steps per Degree [OAT Extension]
+
+Set the number of steps per degree for RA (`:XSR#`) or DEC (`:XSD#`) stepper.
+
+Returns: Nothing
+
+Parameters:
+- `n.n` - Number of steps (only one decimal point supported, must be positive)
+
+#### `:XSDLUnnnnn#` Set DEC Upper Limit [OAT Extension]
+
+Set the upper limit for DEC axis.
+
+Returns: Nothing
+
+Parameters:
+- `nnnnn` - (Optional) Number of steps from home. Omit to use current position. Pass 0 to reset to config default.
+
+#### `:XSDLu#` Clear DEC Upper Limit [OAT Extension]
+
+Resets the upper limit for DEC axis to configuration-defined position.
+
+Returns: Nothing
+
+#### `:XSDLLnnnnn#` Set DEC Lower Limit [OAT Extension]
+
+Set the lower limit for DEC axis.
+
+Returns: Nothing
+
+Parameters:
+- `nnnnn` - (Optional) Number of steps from home. Omit to use current position. Pass 0 to reset to config default.
+
+#### `:XSDLl#` Clear DEC Lower Limit [OAT Extension]
+
+Resets the lower limit for DEC axis to configuration-defined position.
+
+Returns: Nothing
+
+#### `:XSSn.nnn#` Set Tracking Speed Adjustment [OAT Extension]
+
+Set the adjustment factor to speed up (>1.0) or slow down (<1.0) tracking speed.
+
+Returns: Nothing
+
+Parameters:
+- `n.nnn` - Factor to multiply theoretical speed by
+
+#### `:XSTnnnn#` Set Tracking Motor Position [OAT Extension]
+
+**Debugging aid only** - sets internal tracking steps to given value without movement.
+
+Returns: Nothing
+
+Parameters:
+- `nnnn` - Stepper steps to set
+
+⚠️ **Warning**: Not recommended unless you know what you're doing.
+
+#### `:XSMn#` Set Manual Slewing Mode [OAT Extension]
+
+Toggle manual slewing mode where RA and DEC motors run at constant speed.
+
+Returns: Nothing
+
+Parameters:
+- `n` - '1' to turn on, otherwise off
+
+#### `:XSXn.nnn#` / `:XSYn.nnn#` Set Manual Slewing Speed [OAT Extension]
+
+Set RA (`:XSX#`) or DEC (`:XSY#`) manual slewing speed in degrees/sec immediately. Max ~2.5 deg/s.
+
+Returns: Nothing
+
+Parameters:
+- `n.nnn` - Speed in degrees per second
+
+**Note**: Must be in manual slewing mode first (`:XSM1#`).
+
+---
+
+## Appendix C: OAT vs Meade Differences
+
+### Key Behavioral Differences
+
+1. **`:gT#` Command**:
+   - **Meade LX200GPS**: Updates time from GPS, returns after GPS lock or user interrupt
+   - **OAT**: Same behavior but supports timeout parameter (`:gTnnn#`)
+
+2. **`:CM#` Command**:
+   - **Meade**: Returns object name string
+   - **OAT**: Returns `NONE#`
+
+3. **`:D#` Command**:
+   - **Meade**: Returns distance bars to library object
+   - **OAT**: Returns mount slewing status (`|#` if slewing, `#` if not)
+
+4. **Focus Commands**:
+   - **OAT Adds**: `:Fp#` (get position), `:FP#` (set position), `:FB#` (get state)
+
+5. **Movement Commands**:
+   - **OAT Adds**: Extensive extensions for guide pulses, tracking control, stepper control, Hall sensor homing
+
+### Implementation Notes for Developers
+
+- OAT firmware is open source and available at: https://github.com/OpenAstroTech
+- Protocol documentation is auto-generated from firmware source
+- The `:X` family commands are OAT-specific and not part of the Meade specification
+- OAT implements a **subset** of Meade commands - not all Meade commands are supported
+- For Arduino/ESP32-based DIY telescope mounts, use OAT protocol
+- For commercial Meade telescopes, use standard Meade protocol only
