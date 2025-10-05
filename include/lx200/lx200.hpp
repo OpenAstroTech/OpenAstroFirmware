@@ -48,7 +48,7 @@ namespace lx200
  */
 enum class CommandFamily : uint8_t {
 	Alignment = 'A',  ///< Telescope alignment commands
-	Backup = 'B',     ///< Backlash and reticle control
+	Reticle = 'B',    ///< Reticle brightness and accessory control
 	DateTime = 'C',   ///< Date/time commands (also some G, S, L)
 	Distance = 'D',   ///< Distance bars
 	Focus = 'F',      ///< Focuser control

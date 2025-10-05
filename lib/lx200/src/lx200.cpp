@@ -125,7 +125,7 @@ CommandFamily ParserState::identify_family(char first_char) const noexcept
     // Direct character-to-family mapping
     switch (first_char) {
         case 'A': return CommandFamily::Alignment;
-        case 'B': return CommandFamily::Backup;
+        case 'B': return CommandFamily::Reticle;
         case 'C': return CommandFamily::DateTime;
         case 'D': return CommandFamily::Distance;
         case 'F': return CommandFamily::Focus;

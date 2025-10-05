@@ -37,7 +37,7 @@ ZTEST(lx200, test_alignment_commands)
 }
 
 /**
- * @brief Test Backup/Reticule command family (B)
+ * @brief Test Reticle/Accessory command family (B)
  * 
  * According to LX200CommandSet.md Section B:
  * - :B+# - Increase reticle brightness
@@ -47,7 +47,7 @@ ZTEST(lx200, test_alignment_commands)
  * - :$BAdd# - Set Altitude/Dec Antibacklash [LX200GPS]
  * - :$BZdd# - Set Azimuth/RA Antibacklash [LX200GPS]
  */
-ZTEST(lx200, test_backup_commands)
+ZTEST(lx200, test_reticle_commands)
 {
 	ParserState parser;
 
@@ -57,7 +57,7 @@ ZTEST(lx200, test_backup_commands)
 	}
 	auto cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse B+ command");
-	zassert_equal(cmd->family, CommandFamily::Backup, "B+ should be Backup family");
+	zassert_equal(cmd->family, CommandFamily::Reticle, "B+ should be Reticle family");
 
 	// :B-# - Decrease reticle brightness
 	parser.reset();
@@ -66,7 +66,7 @@ ZTEST(lx200, test_backup_commands)
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse B- command");
-	zassert_equal(cmd->family, CommandFamily::Backup, "B- should be Backup family");
+	zassert_equal(cmd->family, CommandFamily::Reticle, "B- should be Reticle family");
 
 	// :B3# - Set reticle flash rate to 3
 	parser.reset();
@@ -75,7 +75,7 @@ ZTEST(lx200, test_backup_commands)
 	}
 	cmd = parser.get_command();
 	zassert_true(cmd.has_value(), "Should parse B3 command");
-	zassert_equal(cmd->family, CommandFamily::Backup, "B3 should be Backup family");
+	zassert_equal(cmd->family, CommandFamily::Reticle, "B3 should be Reticle family");
 }
 
 /**
