@@ -46,40 +46,41 @@ namespace lx200
  * Commands are grouped by their first character(s) after the ':' prefix.
  * This enables fast lookup and categorization.
  * 
- * Special cases:
- * - Most commands: Single character designator (e.g., :Gxx#, :Mxx#)
- * - Dollar commands: Two-character designator starting with '$' (e.g., :$Bxx#, :$Qxx#)
+ * Classification mapping:
+ * - Single-character families: A, B, C, D, f, F, G, g, h, H, I, L, M, P, Q, r, R, S, T, U, W, X, ?
+ * - Two-character families: $B (Backlash), $Q (SmartDrive)
  * 
- * Note: Some command families have semantic groupings across multiple
- * prefixes (e.g., date/time commands span C, G, H, S families).
+ * Note: This is purely a type-safe categorization enum. The actual character
+ * mapping is handled by identify_family() which inspects the command string.
+ * Enum values are auto-assigned by the compiler for simplicity.
  */
 enum class CommandFamily : uint8_t {
-	Alignment = 'A',  ///< Telescope alignment commands
-	Backlash = '$',   ///< Active backlash compensation (:$B commands, LX200GPS)
-	Reticle = 'B',    ///< Reticle brightness and accessory control
-	Sync = 'C',       ///< Sync control (telescope position synchronization)
-	Distance = 'D',   ///< Distance bars
-	Fan = 'f',        ///< Fan/power control (lowercase f, LX200GPS/LX16")
-	Focus = 'F',      ///< Focuser control
-	GetInfo = 'G',    ///< Get telescope information
-	GPS = 'g',        ///< GPS-related commands (lowercase g)
-	Home = 'h',       ///< Home position and parking (lowercase h)
-	HourFormat = 'H', ///< Hour angle/time format toggle (uppercase H)
-	Initialize = 'I', ///< Initialize telescope
-	Library = 'L',    ///< Object library commands
-	Movement = 'M',   ///< Slew and movement control
-	Precision = 'P',  ///< Toggle precision mode
-	Quit = 'Q',       ///< Stop/quit movement
-	SmartDrive = '@', ///< Smart Drive PEC control (:$Q commands, LX200GPS/LX16")
-	Derotator = 'r',  ///< Field de-rotator control (lowercase r, LX16")
-	Rate = 'R',       ///< Slew rate control
-	SetInfo = 'S',    ///< Set telescope information
-	Tracking = 'T',   ///< Tracking rate control
-	User = 'U',       ///< User format control
-	Waypoint = 'W',   ///< Way point/site commands (LX200GPS)
-	Extended = 'X',   ///< Extended OAT-specific commands
-	Help = '?',       ///< Help commands (LX200GPS/LX16")
-	Unknown = 0       ///< Unrecognized command
+	Alignment,    ///< Telescope alignment commands (A)
+	Backlash,     ///< Active backlash compensation ($B commands, LX200GPS)
+	Reticle,      ///< Reticle brightness and accessory control (B)
+	Sync,         ///< Sync control (C - telescope position synchronization)
+	Distance,     ///< Distance bars (D)
+	Fan,          ///< Fan/power control (f - lowercase, LX200GPS/LX16")
+	Focus,        ///< Focuser control (F)
+	GetInfo,      ///< Get telescope information (G - uppercase)
+	GPS,          ///< GPS-related commands (g - lowercase)
+	Home,         ///< Home position and parking (h - lowercase)
+	HourFormat,   ///< Hour angle/time format toggle (H - uppercase)
+	Initialize,   ///< Initialize telescope (I)
+	Library,      ///< Object library commands (L)
+	Movement,     ///< Slew and movement control (M)
+	Precision,    ///< Toggle precision mode (P)
+	Quit,         ///< Stop/quit movement (Q)
+	SmartDrive,   ///< Smart Drive PEC control ($Q commands, LX200GPS/LX16")
+	Derotator,    ///< Field de-rotator control (r - lowercase, LX16")
+	Rate,         ///< Slew rate control (R)
+	SetInfo,      ///< Set telescope information (S)
+	Tracking,     ///< Tracking rate control (T)
+	User,         ///< User format control (U)
+	Waypoint,     ///< Way point/site commands (W - LX200GPS)
+	Extended,     ///< Extended OAT-specific commands (X)
+	Help,         ///< Help commands (? - LX200GPS/LX16")
+	Unknown       ///< Unrecognized command
 };
 
 /**
