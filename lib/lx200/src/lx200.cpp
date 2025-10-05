@@ -35,37 +35,37 @@ void ParserState::reset() noexcept
     // Note: precision_ is NOT reset - it persists across commands
 }
 
-ParseResult ParserState::feed_character(char c) noexcept
+VoidResult ParserState::feed_character(char c) noexcept
 {
     // Check for buffer overflow
     if (buffer_length_ >= MAX_COMMAND_LENGTH) {
-        return ParseResult::ErrorBufferFull;
+        return Err<Unit>(ParseError::BufferFull);
     }
     
     // First character must be ':'
     if (buffer_length_ == 0) {
         if (c != ':') {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<Unit>(ParseError::InvalidFormat);
         }
         buffer_[buffer_length_++] = c;
-        return ParseResult::Incomplete;
+        return Ok();
     }
     
     // Check for command terminator
     if (c == '#') {
         // Empty command (just ":#") is invalid
         if (buffer_length_ == 1) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<Unit>(ParseError::InvalidFormat);
         }
         
         buffer_[buffer_length_++] = c;
         command_complete_ = true;
-        return ParseResult::Success;
+        return Ok();
     }
     
     // Accumulate character
     buffer_[buffer_length_++] = c;
-    return ParseResult::Incomplete;
+    return Ok();
 }
 
 bool ParserState::is_command_ready() const noexcept

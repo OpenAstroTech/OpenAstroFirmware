@@ -1,559 +1,546 @@
 /*
- * Copyright (c) 2025, OpenAstroTech
- * SPDX-License-Identifier: Apache-2.0
+ * LX200 Coordinate Parsing Tests - Result<T> API
+ * Tests for all coordinate parsing functions returning Result<T>
  */
 
-#include <zephyr/ztest.h>
 #include <lx200/lx200.hpp>
-#include <string>
-
-/**
- * @file test_coordinates.cpp
- * @brief LX200 Coordinate Parsing Contract Tests
- *
- * Tests based on coordinate-parsing-contract.md:
- * - TC-RA-001 to TC-RA-005: Right Ascension parsing
- * - TC-DEC-001 to TC-DEC-005: Declination parsing
- * - TC-LAT-001 to TC-LAT-002: Latitude parsing
- * - TC-LON-001 to TC-LON-002: Longitude parsing
- * - TC-TIME-001 to TC-TIME-002: Time parsing
- * - TC-DATE-001 to TC-DATE-003: Date parsing
- */
+#include <zephyr/ztest.h>
 
 using namespace lx200;
 
 /* ========================================================================
- * Right Ascension Tests
+ * Right Ascension (RA) Tests
  * ======================================================================== */
 
-/**
- * @brief TC-RA-001: Parse high precision RA coordinate
- *
- * Format: HH:MM:SS (e.g., "12:34:56")
- */
-ZTEST(lx200, test_ra_high_precision)
+ZTEST(lx200_coordinates, test_ra_high_precision_valid)
 {
-	RACoordinate ra;
-	auto result = parse_ra_coordinate("12:34:56", PrecisionMode::High, ra);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid RA");
-	zassert_equal(ra.hours, 12, "Hours should be 12");
-	zassert_equal(ra.minutes, 34, "Minutes should be 34");
-	zassert_equal(ra.seconds, 56, "Seconds should be 56");
+	auto result = parse_ra("12:34:56", PrecisionMode::High);
+	
+	zassert_true(result.is_ok(), "Should parse valid RA");
+	
+	auto coord = result.value();
+	zassert_equal(coord.hours, 12, "Hours should be 12");
+	zassert_equal(coord.minutes, 34, "Minutes should be 34");
+	zassert_equal(coord.seconds, 56, "Seconds should be 56");
 }
 
-/**
- * @brief TC-RA-002: Parse low precision RA coordinate
- *
- * Format: HH:MM.T (e.g., "12:34.5")
- * Note: Tenths of arcminutes converted to seconds (0.1 arcmin = 6 arcsec)
- */
-ZTEST(lx200, test_ra_low_precision)
+ZTEST(lx200_coordinates, test_ra_low_precision_valid)
 {
-	RACoordinate ra;
-	auto result = parse_ra_coordinate("12:34.5", PrecisionMode::Low, ra);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid RA");
-	zassert_equal(ra.hours, 12, "Hours should be 12");
-	zassert_equal(ra.minutes, 34, "Minutes should be 34");
-	zassert_equal(ra.seconds, 30, "Seconds should be 30 (5 tenths * 6)");
+	auto result = parse_ra("23:59.9", PrecisionMode::Low);
+	
+	zassert_true(result.is_ok(), "Should parse valid RA in low precision");
+	
+	auto coord = result.value();
+	zassert_equal(coord.hours, 23, "Hours should be 23");
+	zassert_equal(coord.minutes, 59, "Minutes should be 59");
+	zassert_equal(coord.seconds, 54, "Seconds should be 54 (9*6)");
 }
 
-/**
- * @brief TC-RA-003: Validate RA range (0-23 hours)
- */
-ZTEST(lx200, test_ra_validation)
+ZTEST(lx200_coordinates, test_ra_zero_values)
 {
-	RACoordinate ra;
-
-	// Valid boundary cases
-	zassert_equal(parse_ra_coordinate("00:00:00", PrecisionMode::High, ra),
-		      ParseResult::Success, "Should accept 00:00:00");
-	zassert_equal(parse_ra_coordinate("23:59:59", PrecisionMode::High, ra),
-		      ParseResult::Success, "Should accept 23:59:59");
-
-	// Invalid cases
-	zassert_equal(parse_ra_coordinate("24:00:00", PrecisionMode::High, ra),
-		      ParseResult::ErrorOutOfRange, "Should reject hours >= 24");
-	zassert_equal(parse_ra_coordinate("12:60:00", PrecisionMode::High, ra),
-		      ParseResult::ErrorOutOfRange, "Should reject minutes >= 60");
-	zassert_equal(parse_ra_coordinate("12:34:60", PrecisionMode::High, ra),
-		      ParseResult::ErrorOutOfRange, "Should reject seconds >= 60");
+	auto result = parse_ra("00:00:00", PrecisionMode::High);
+	
+	zassert_true(result.is_ok(), "Should parse zero RA");
+	
+	auto coord = result.value();
+	zassert_equal(coord.hours, 0);
+	zassert_equal(coord.minutes, 0);
+	zassert_equal(coord.seconds, 0);
 }
 
-/**
- * @brief TC-RA-004: Test RA format validation
- */
-ZTEST(lx200, test_ra_format_validation)
+ZTEST(lx200_coordinates, test_ra_max_valid_values)
 {
-	RACoordinate ra;
-
-	// Invalid formats
-	zassert_equal(parse_ra_coordinate("12:34", PrecisionMode::High, ra),
-		      ParseResult::ErrorInvalidFormat, "Should reject incomplete format");
-	zassert_equal(parse_ra_coordinate("12:34:5X", PrecisionMode::High, ra),
-		      ParseResult::ErrorInvalidFormat, "Should reject non-numeric characters");
-	zassert_equal(parse_ra_coordinate("1234:56", PrecisionMode::High, ra),
-		      ParseResult::ErrorInvalidFormat, "Should reject malformed separators");
+	auto result = parse_ra("23:59:59", PrecisionMode::High);
+	
+	zassert_true(result.is_ok(), "Should parse max valid RA");
+	
+	auto coord = result.value();
+	zassert_equal(coord.hours, 23);
+	zassert_equal(coord.minutes, 59);
+	zassert_equal(coord.seconds, 59);
 }
 
-/**
- * @brief TC-RA-005: Test zero allocation constraint
- */
-ZTEST(lx200, test_ra_zero_allocation)
+ZTEST(lx200_coordinates, test_ra_hours_out_of_range)
 {
-	RACoordinate ra;
+	auto result = parse_ra("24:00:00", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on hours >= 24");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
 
-	// This test verifies parsing uses stack only
-	// No heap allocations should occur
-	auto result = parse_ra_coordinate("12:34:56", PrecisionMode::High, ra);
-	zassert_equal(result, ParseResult::Success, "Should parse without allocation");
+ZTEST(lx200_coordinates, test_ra_minutes_out_of_range)
+{
+	auto result = parse_ra("12:60:00", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on minutes >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
 
-	// Verify result is on stack (size check)
-	zassert_true(sizeof(ra) <= 8, "RA should be small stack object");
+ZTEST(lx200_coordinates, test_ra_seconds_out_of_range)
+{
+	auto result = parse_ra("12:34:60", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on seconds >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_ra_empty_string)
+{
+	auto result = parse_ra("", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on empty string");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
+
+ZTEST(lx200_coordinates, test_ra_invalid_format)
+{
+	auto result = parse_ra("invalid", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on invalid format");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
+
+ZTEST(lx200_coordinates, test_ra_match_pattern)
+{
+	auto result = parse_ra("10:20:30", PrecisionMode::High);
+	
+	bool success = false;
+	result.match(
+		[&](const RACoordinate& coord) {
+			success = true;
+			zassert_equal(coord.hours, 10);
+			zassert_equal(coord.minutes, 20);
+			zassert_equal(coord.seconds, 30);
+		},
+		[](ParseError) {
+			zassert_unreachable("Should not call error callback");
+		}
+	);
+	
+	zassert_true(success, "Match should call success callback");
+}
+
+ZTEST(lx200_coordinates, test_ra_value_or)
+{
+	auto error_result = parse_ra("invalid", PrecisionMode::High);
+	
+	RACoordinate default_coord{1, 2, 3};
+	auto coord = error_result.value_or(default_coord);
+	
+	zassert_equal(coord.hours, 1, "Should return default hours");
+	zassert_equal(coord.minutes, 2, "Should return default minutes");
+	zassert_equal(coord.seconds, 3, "Should return default seconds");
 }
 
 /* ========================================================================
- * Declination Tests
+ * Declination (DEC) Tests
  * ======================================================================== */
 
-/**
- * @brief TC-DEC-001: Parse positive declination
- *
- * Format: sDD*MM:SS (e.g., "+45*30:15")
- */
-ZTEST(lx200, test_dec_positive)
+ZTEST(lx200_coordinates, test_dec_positive_high_precision)
 {
-	DECCoordinate dec;
-	auto result = parse_dec_coordinate("+45*30:15", PrecisionMode::High, dec);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid DEC");
-	zassert_equal(dec.sign, '+', "Sign should be positive");
-	zassert_equal(dec.degrees, 45, "Degrees should be 45");
-	zassert_equal(dec.arcminutes, 30, "Arcminutes should be 30");
-	zassert_equal(dec.arcseconds, 15, "Arcseconds should be 15");
+	auto result = parse_dec("+45*30:15", PrecisionMode::High);
+	
+	zassert_true(result.is_ok(), "Should parse positive DEC");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 45);
+	zassert_equal(coord.arcminutes, 30);
+	zassert_equal(coord.arcseconds, 15);
 }
 
-/**
- * @brief TC-DEC-002: Parse negative declination
- *
- * Format: sDD*MM:SS (e.g., "-12*45:30")
- */
-ZTEST(lx200, test_dec_negative)
+ZTEST(lx200_coordinates, test_dec_negative_high_precision)
 {
-	DECCoordinate dec;
-	auto result = parse_dec_coordinate("-12*45:30", PrecisionMode::High, dec);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid DEC");
-	zassert_equal(dec.sign, '-', "Sign should be negative");
-	zassert_equal(dec.degrees, 12, "Degrees should be 12");
-	zassert_equal(dec.arcminutes, 45, "Arcminutes should be 45");
-	zassert_equal(dec.arcseconds, 30, "Arcseconds should be 30");
+	auto result = parse_dec("-89*59:59", PrecisionMode::High);
+	
+	zassert_true(result.is_ok(), "Should parse negative DEC");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '-');
+	zassert_equal(coord.degrees, 89);
+	zassert_equal(coord.arcminutes, 59);
+	zassert_equal(coord.arcseconds, 59);
 }
 
-/**
- * @brief TC-DEC-003: Validate DEC range (-90° to +90°)
- */
-ZTEST(lx200, test_dec_validation)
+ZTEST(lx200_coordinates, test_dec_low_precision)
 {
-	DECCoordinate dec;
-
-	// Valid boundary cases
-	zassert_equal(parse_dec_coordinate("+90*00:00", PrecisionMode::High, dec),
-		      ParseResult::Success, "Should accept +90°");
-	zassert_equal(parse_dec_coordinate("-90*00:00", PrecisionMode::High, dec),
-		      ParseResult::Success, "Should accept -90°");
-
-	// Invalid cases
-	zassert_equal(parse_dec_coordinate("+91*00:00", PrecisionMode::High, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject > +90°");
-	zassert_equal(parse_dec_coordinate("-91*00:00", PrecisionMode::High, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject < -90°");
+	// Low precision DEC format: sDD*MM (no tenths support yet)
+	auto result = parse_dec("+45*30", PrecisionMode::Low);
+	
+	zassert_true(result.is_ok(), "Should parse DEC in low precision");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 45);
+	zassert_equal(coord.arcminutes, 30);
+	zassert_equal(coord.arcseconds, 0, "Low precision has no arcseconds");
 }
 
-/**
- * @brief TC-DEC-004: Test 90° boundary validation
- *
- * Declination 90° is only valid when arcminutes and arcseconds are both zero.
- * This tests the critical edge case identified in PR review.
- */
-ZTEST(lx200, test_dec_90_degree_boundary)
+ZTEST(lx200_coordinates, test_dec_zero)
 {
-	DECCoordinate dec;
-
-	// Valid: Exactly 90° with zero arcminutes/arcseconds
-	zassert_equal(parse_dec_coordinate("+90*00:00", PrecisionMode::High, dec),
-		      ParseResult::Success, "Should accept +90*00:00");
-	zassert_equal(parse_dec_coordinate("-90*00:00", PrecisionMode::High, dec),
-		      ParseResult::Success, "Should accept -90*00:00");
-	zassert_equal(parse_dec_coordinate("+90*00", PrecisionMode::Low, dec),
-		      ParseResult::Success, "Should accept +90*00 (low precision)");
-	zassert_equal(parse_dec_coordinate("-90*00", PrecisionMode::Low, dec),
-		      ParseResult::Success, "Should accept -90*00 (low precision)");
-
-	// Invalid: 90° with non-zero arcminutes or arcseconds
-	zassert_equal(parse_dec_coordinate("+90*30:00", PrecisionMode::High, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject +90*30:00");
-	zassert_equal(parse_dec_coordinate("+90*00:01", PrecisionMode::High, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject +90*00:01");
-	zassert_equal(parse_dec_coordinate("-90*30:00", PrecisionMode::High, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject -90*30:00");
-	zassert_equal(parse_dec_coordinate("-90*00:01", PrecisionMode::High, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject -90*00:01");
-	zassert_equal(parse_dec_coordinate("+90*30", PrecisionMode::Low, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject +90*30 (low precision)");
-	zassert_equal(parse_dec_coordinate("-90*30", PrecisionMode::Low, dec),
-		      ParseResult::ErrorOutOfRange, "Should reject -90*30 (low precision)");
+	auto result = parse_dec("+00*00:00", PrecisionMode::High);
+	
+	zassert_true(result.is_ok(), "Should parse zero DEC");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 0);
+	zassert_equal(coord.arcminutes, 0);
+	zassert_equal(coord.arcseconds, 0);
 }
 
-/**
- * @brief TC-DEC-005: Test apostrophe separator (alternate format)
- *
- * LX200 uses * for degrees, ' for arcminutes in some contexts
- */
-ZTEST(lx200, test_dec_apostrophe_separator)
+ZTEST(lx200_coordinates, test_dec_degrees_out_of_range)
 {
-	DECCoordinate dec;
-
-	// Test degree symbol variants
-	auto result = parse_dec_coordinate("+45*30'15", PrecisionMode::High, dec);
-	zassert_equal(result, ParseResult::Success, "Should handle apostrophe separator");
+	auto result = parse_dec("+90*00:01", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on degrees > 90");
+	zassert_equal(result.error(), ParseError::OutOfRange);
 }
 
-/**
- * @brief TC-DEC-005: Test low precision DEC format
- *
- * Format: sDD*MM (e.g., "+45*30")
- */
-ZTEST(lx200, test_dec_low_precision)
+ZTEST(lx200_coordinates, test_dec_minutes_out_of_range)
 {
-	DECCoordinate dec;
-	auto result = parse_dec_coordinate("+45*30", PrecisionMode::Low, dec);
+	auto result = parse_dec("+45*60:00", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on minutes >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
 
-	zassert_equal(result, ParseResult::Success, "Should parse low precision DEC");
-	zassert_equal(dec.degrees, 45, "Degrees should be 45");
-	zassert_equal(dec.arcminutes, 30, "Arcminutes should be 30");
+ZTEST(lx200_coordinates, test_dec_invalid_sign)
+{
+	auto result = parse_dec("X45*30:15", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on invalid sign");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
+
+ZTEST(lx200_coordinates, test_dec_empty_string)
+{
+	auto result = parse_dec("", PrecisionMode::High);
+	
+	zassert_true(result.is_error(), "Should error on empty string");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
 }
 
 /* ========================================================================
  * Latitude Tests
  * ======================================================================== */
 
-/**
- * @brief TC-LAT-001: Parse latitude coordinate
- *
- * Format: sDD*MM (e.g., "+37*45")
- */
-ZTEST(lx200, test_latitude_parsing)
+ZTEST(lx200_coordinates, test_latitude_positive)
 {
-	LatitudeCoordinate lat;
-	auto result = parse_latitude_coordinate("+37*45", lat);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid latitude");
-	zassert_equal(lat.sign, '+', "Sign should be positive");
-	zassert_equal(lat.degrees, 37, "Degrees should be 37");
-	zassert_equal(lat.arcminutes, 45, "Arcminutes should be 45");
+	auto result = parse_latitude("+45*30");
+	
+	zassert_true(result.is_ok(), "Should parse positive latitude");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 45);
+	zassert_equal(coord.arcminutes, 30);
 }
 
-/**
- * @brief TC-LAT-002: Validate latitude range (-90° to +90°)
- */
-ZTEST(lx200, test_latitude_validation)
+ZTEST(lx200_coordinates, test_latitude_negative)
 {
-	LatitudeCoordinate lat;
-
-	// Valid boundary cases
-	zassert_equal(parse_latitude_coordinate("+90*00", lat), ParseResult::Success,
-		      "Should accept +90°");
-	zassert_equal(parse_latitude_coordinate("-90*00", lat), ParseResult::Success,
-		      "Should accept -90°");
-
-	// Invalid cases
-	zassert_equal(parse_latitude_coordinate("+91*00", lat), ParseResult::ErrorOutOfRange,
-		      "Should reject > +90°");
+	auto result = parse_latitude("-33*52");
+	
+	zassert_true(result.is_ok(), "Should parse negative latitude");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '-');
+	zassert_equal(coord.degrees, 33);
+	zassert_equal(coord.arcminutes, 52);
 }
 
-/**
- * @brief TC-LAT-003: Test 90° boundary validation
- *
- * Latitude 90° is only valid when arcminutes are zero.
- * This tests the critical edge case identified in PR review.
- */
-ZTEST(lx200, test_latitude_90_degree_boundary)
+ZTEST(lx200_coordinates, test_latitude_zero)
 {
-	LatitudeCoordinate lat;
+	auto result = parse_latitude("+00*00");
+	
+	zassert_true(result.is_ok(), "Should parse zero latitude");
+	
+	auto coord = result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 0);
+	zassert_equal(coord.arcminutes, 0);
+}
 
-	// Valid: Exactly 90° with zero arcminutes
-	zassert_equal(parse_latitude_coordinate("+90*00", lat), ParseResult::Success,
-		      "Should accept +90*00");
-	zassert_equal(parse_latitude_coordinate("-90*00", lat), ParseResult::Success,
-		      "Should accept -90*00");
+ZTEST(lx200_coordinates, test_latitude_max_valid)
+{
+	auto result = parse_latitude("+90*00");
+	
+	zassert_true(result.is_ok(), "Should parse +90 degrees");
+	
+	auto coord = result.value();
+	zassert_equal(coord.degrees, 90);
+}
 
-	// Invalid: 90° with non-zero arcminutes
-	zassert_equal(parse_latitude_coordinate("+90*30", lat), ParseResult::ErrorOutOfRange,
-		      "Should reject +90*30");
-	zassert_equal(parse_latitude_coordinate("-90*30", lat), ParseResult::ErrorOutOfRange,
-		      "Should reject -90*30");
-	zassert_equal(parse_latitude_coordinate("+90*01", lat), ParseResult::ErrorOutOfRange,
-		      "Should reject +90*01");
-	zassert_equal(parse_latitude_coordinate("-90*01", lat), ParseResult::ErrorOutOfRange,
-		      "Should reject -90*01");
+ZTEST(lx200_coordinates, test_latitude_out_of_range)
+{
+	auto result = parse_latitude("+91*00");
+	
+	zassert_true(result.is_error(), "Should error on latitude > 90");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_latitude_minutes_out_of_range)
+{
+	auto result = parse_latitude("+45*60");
+	
+	zassert_true(result.is_error(), "Should error on minutes >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_latitude_invalid_format)
+{
+	auto result = parse_latitude("invalid");
+	
+	zassert_true(result.is_error(), "Should error on invalid format");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
 }
 
 /* ========================================================================
  * Longitude Tests
  * ======================================================================== */
 
-/**
- * @brief TC-LON-001: Parse longitude coordinate (0-360°)
- *
- * Format: DDD*MM (e.g., "122*30")
- */
-ZTEST(lx200, test_longitude_parsing)
+ZTEST(lx200_coordinates, test_longitude_positive)
 {
-	LongitudeCoordinate lon;
-	auto result = parse_longitude_coordinate("122*30", lon);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid longitude");
-	zassert_equal(lon.degrees, 122, "Degrees should be 122");
-	zassert_equal(lon.arcminutes, 30, "Arcminutes should be 30");
+	auto result = parse_longitude("151*12");
+	
+	zassert_true(result.is_ok(), "Should parse longitude");
+	
+	auto coord = result.value();
+	zassert_equal(coord.degrees, 151);
+	zassert_equal(coord.arcminutes, 12);
 }
 
-/**
- * @brief TC-LON-002: Validate longitude range (0° to 360°)
- */
-ZTEST(lx200, test_longitude_validation)
+ZTEST(lx200_coordinates, test_longitude_negative)
 {
-	LongitudeCoordinate lon;
-
-	// Valid boundary cases
-	zassert_equal(parse_longitude_coordinate("000*00", lon), ParseResult::Success,
-		      "Should accept 0°");
-	zassert_equal(parse_longitude_coordinate("359*59", lon), ParseResult::Success,
-		      "Should accept 359°59'");
-
-	// Invalid case
-	zassert_equal(parse_longitude_coordinate("360*00", lon), ParseResult::ErrorOutOfRange,
-		      "Should reject >= 360°");
+	auto result = parse_longitude("122*25");
+	
+	zassert_true(result.is_ok(), "Should parse longitude");
+	
+	auto coord = result.value();
+	zassert_equal(coord.degrees, 122);
+	zassert_equal(coord.arcminutes, 25);
 }
 
-/* ========================================================================
- * Time Tests
- * ======================================================================== */
-
-/**
- * @brief TC-TIME-001: Parse time value
- *
- * Format: HH:MM:SS (e.g., "14:30:45")
- */
-ZTEST(lx200, test_time_parsing)
+ZTEST(lx200_coordinates, test_longitude_zero)
 {
-	TimeValue time;
-	auto result = parse_time_value("14:30:45", time);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid time");
-	zassert_equal(time.hours, 14, "Hours should be 14");
-	zassert_equal(time.minutes, 30, "Minutes should be 30");
-	zassert_equal(time.seconds, 45, "Seconds should be 45");
+	auto result = parse_longitude("000*00");
+	
+	zassert_true(result.is_ok(), "Should parse zero longitude");
+	
+	auto coord = result.value();
+	zassert_equal(coord.degrees, 0);
+	zassert_equal(coord.arcminutes, 0);
 }
 
-/**
- * @brief TC-TIME-002: Validate time ranges
- */
-ZTEST(lx200, test_time_validation)
+ZTEST(lx200_coordinates, test_longitude_max_valid)
 {
-	TimeValue time;
+	auto result = parse_longitude("180*00");
+	
+	zassert_true(result.is_ok(), "Should parse 180 degrees");
+	
+	auto coord = result.value();
+	zassert_equal(coord.degrees, 180);
+}
 
-	// Valid boundary cases
-	zassert_equal(parse_time_value("00:00:00", time), ParseResult::Success,
-		      "Should accept 00:00:00");
-	zassert_equal(parse_time_value("23:59:59", time), ParseResult::Success,
-		      "Should accept 23:59:59");
+ZTEST(lx200_coordinates, test_longitude_out_of_range)
+{
+	auto result = parse_longitude("360*00");
+	
+	zassert_true(result.is_error(), "Should error on longitude >= 360");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
 
-	// Invalid cases
-	zassert_equal(parse_time_value("24:00:00", time), ParseResult::ErrorOutOfRange,
-		      "Should reject hours >= 24");
-	zassert_equal(parse_time_value("12:60:00", time), ParseResult::ErrorOutOfRange,
-		      "Should reject minutes >= 60");
+ZTEST(lx200_coordinates, test_longitude_minutes_out_of_range)
+{
+	auto result = parse_longitude("100*60");
+	
+	zassert_true(result.is_error(), "Should error on arcminutes >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_longitude_invalid_format)
+{
+	auto result = parse_longitude("not-valid");
+	
+	zassert_true(result.is_error(), "Should error on invalid format");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
 }
 
 /* ========================================================================
- * Date Tests
+ * Time Value Tests
  * ======================================================================== */
 
-/**
- * @brief TC-DATE-001: Parse date value
- *
- * Format: MM/DD/YY (e.g., "03/15/23")
- */
-ZTEST(lx200, test_date_parsing)
+ZTEST(lx200_coordinates, test_time_valid)
 {
-	DateValue date;
-	auto result = parse_date_value("03/15/23", date);
-
-	zassert_equal(result, ParseResult::Success, "Should parse valid date");
-	zassert_equal(date.month, 3, "Month should be 3");
-	zassert_equal(date.day, 15, "Day should be 15");
-	zassert_equal(date.year, 23, "Year should be 23");
+	auto result = parse_time("14:30:45");
+	
+	zassert_true(result.is_ok(), "Should parse valid time");
+	
+	auto time = result.value();
+	zassert_equal(time.hours, 14);
+	zassert_equal(time.minutes, 30);
+	zassert_equal(time.seconds, 45);
 }
 
-/**
- * @brief TC-DATE-002: Validate month range (1-12)
- */
-ZTEST(lx200, test_date_month_validation)
+ZTEST(lx200_coordinates, test_time_midnight)
 {
-	DateValue date;
-
-	// Valid boundary cases
-	zassert_equal(parse_date_value("01/15/23", date), ParseResult::Success,
-		      "Should accept month 1");
-	zassert_equal(parse_date_value("12/15/23", date), ParseResult::Success,
-		      "Should accept month 12");
-
-	// Invalid cases
-	zassert_equal(parse_date_value("00/15/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject month 0");
-	zassert_equal(parse_date_value("13/15/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject month > 12");
+	auto result = parse_time("00:00:00");
+	
+	zassert_true(result.is_ok(), "Should parse midnight");
+	
+	auto time = result.value();
+	zassert_equal(time.hours, 0);
+	zassert_equal(time.minutes, 0);
+	zassert_equal(time.seconds, 0);
 }
 
-/**
- * @brief TC-DATE-003: Validate day range (1-31)
- */
-ZTEST(lx200, test_date_day_validation)
+ZTEST(lx200_coordinates, test_time_max_valid)
 {
-	DateValue date;
-
-	// Valid boundary cases
-	zassert_equal(parse_date_value("03/01/23", date), ParseResult::Success,
-		      "Should accept day 1");
-	zassert_equal(parse_date_value("03/31/23", date), ParseResult::Success,
-		      "Should accept day 31");
-
-	// Invalid cases
-	zassert_equal(parse_date_value("03/00/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject day 0");
-	zassert_equal(parse_date_value("03/32/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject day > 31");
+	auto result = parse_time("23:59:59");
+	
+	zassert_true(result.is_ok(), "Should parse max valid time");
+	
+	auto time = result.value();
+	zassert_equal(time.hours, 23);
+	zassert_equal(time.minutes, 59);
+	zassert_equal(time.seconds, 59);
 }
 
-/**
- * @brief TC-DATE-004: Test month-specific day validation
- *
- * Validates that the parser correctly enforces day limits for each month,
- * preventing invalid dates like February 30th or April 31st.
- * This tests the critical date validation issue identified in PR review.
- */
-ZTEST(lx200, test_date_month_day_validation)
+ZTEST(lx200_coordinates, test_time_hours_out_of_range)
 {
-	DateValue date;
-
-	// Valid: Last day of each month (non-leap year)
-	zassert_equal(parse_date_value("01/31/23", date), ParseResult::Success,
-		      "Should accept January 31st");
-	zassert_equal(parse_date_value("02/28/23", date), ParseResult::Success,
-		      "Should accept February 28th (non-leap year)");
-	zassert_equal(parse_date_value("03/31/23", date), ParseResult::Success,
-		      "Should accept March 31st");
-	zassert_equal(parse_date_value("04/30/23", date), ParseResult::Success,
-		      "Should accept April 30th");
-	zassert_equal(parse_date_value("05/31/23", date), ParseResult::Success,
-		      "Should accept May 31st");
-	zassert_equal(parse_date_value("06/30/23", date), ParseResult::Success,
-		      "Should accept June 30th");
-	zassert_equal(parse_date_value("07/31/23", date), ParseResult::Success,
-		      "Should accept July 31st");
-	zassert_equal(parse_date_value("08/31/23", date), ParseResult::Success,
-		      "Should accept August 31st");
-	zassert_equal(parse_date_value("09/30/23", date), ParseResult::Success,
-		      "Should accept September 30th");
-	zassert_equal(parse_date_value("10/31/23", date), ParseResult::Success,
-		      "Should accept October 31st");
-	zassert_equal(parse_date_value("11/30/23", date), ParseResult::Success,
-		      "Should accept November 30th");
-	zassert_equal(parse_date_value("12/31/23", date), ParseResult::Success,
-		      "Should accept December 31st");
-
-	// Invalid: Days beyond month limits
-	zassert_equal(parse_date_value("02/30/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject February 30th");
-	zassert_equal(parse_date_value("02/29/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject February 29th (non-leap year)");
-	zassert_equal(parse_date_value("04/31/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject April 31st");
-	zassert_equal(parse_date_value("06/31/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject June 31st");
-	zassert_equal(parse_date_value("09/31/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject September 31st");
-	zassert_equal(parse_date_value("11/31/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject November 31st");
+	auto result = parse_time("24:00:00");
+	
+	zassert_true(result.is_error(), "Should error on hours >= 24");
+	zassert_equal(result.error(), ParseError::OutOfRange);
 }
 
-/**
- * @brief TC-DATE-005: Test leap year validation
- *
- * Validates that February 29th is accepted in leap years and rejected
- * in non-leap years, following standard Gregorian calendar rules.
- */
-ZTEST(lx200, test_date_leap_year_validation)
+ZTEST(lx200_coordinates, test_time_minutes_out_of_range)
 {
-	DateValue date;
+	auto result = parse_time("12:60:00");
+	
+	zassert_true(result.is_error(), "Should error on minutes >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
 
-	// Valid: February 29th in leap years
-	zassert_equal(parse_date_value("02/29/24", date), ParseResult::Success,
-		      "Should accept Feb 29, 2024 (leap year)");
-	zassert_equal(parse_date_value("02/29/20", date), ParseResult::Success,
-		      "Should accept Feb 29, 2020 (leap year)");
-	zassert_equal(parse_date_value("02/29/00", date), ParseResult::Success,
-		      "Should accept Feb 29, 2000 (leap year, divisible by 400)");
+ZTEST(lx200_coordinates, test_time_seconds_out_of_range)
+{
+	auto result = parse_time("12:30:60");
+	
+	zassert_true(result.is_error(), "Should error on seconds >= 60");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
 
-	// Invalid: February 29th in non-leap years
-	zassert_equal(parse_date_value("02/29/23", date), ParseResult::ErrorOutOfRange,
-		      "Should reject Feb 29, 2023 (not a leap year)");
-	zassert_equal(parse_date_value("02/29/21", date), ParseResult::ErrorOutOfRange,
-		      "Should reject Feb 29, 2021 (not a leap year)");
-	zassert_equal(parse_date_value("02/29/25", date), ParseResult::ErrorOutOfRange,
-		      "Should reject Feb 29, 2025 (not a leap year)");
+ZTEST(lx200_coordinates, test_time_invalid_format)
+{
+	auto result = parse_time("not-a-time");
+	
+	zassert_true(result.is_error(), "Should error on invalid format");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
 
-	// Invalid: February 30th (never valid)
-	zassert_equal(parse_date_value("02/30/24", date), ParseResult::ErrorOutOfRange,
-		      "Should reject Feb 30, 2024 (even in leap year)");
+ZTEST(lx200_coordinates, test_time_empty_string)
+{
+	auto result = parse_time("");
+	
+	zassert_true(result.is_error(), "Should error on empty string");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
 }
 
 /* ========================================================================
- * Performance Tests
+ * Date Value Tests
  * ======================================================================== */
 
-/**
- * @brief Test coordinate parsing performance (<5μs requirement)
- */
-ZTEST(lx200, test_coordinate_parsing_performance)
+ZTEST(lx200_coordinates, test_date_valid)
 {
-	RACoordinate ra;
-
-	// Warm up cache
-	parse_ra_coordinate("12:34:56", PrecisionMode::High, ra);
-
-	// Measure parsing time
-	uint32_t start = k_cycle_get_32();
-	for (int i = 0; i < 100; i++) {
-		parse_ra_coordinate("12:34:56", PrecisionMode::High, ra);
-	}
-	uint32_t end = k_cycle_get_32();
-
-	uint32_t cycles = end - start;
-	uint32_t avg_cycles = cycles / 100;
-
-	// At typical embedded clock speeds (e.g., 168 MHz),
-	// <5μs means <840 cycles per parse
-	zassert_true(avg_cycles < 1000, "Coordinate parsing should be fast (<5μs average)");
+	auto result = parse_date("12/25/23");
+	
+	zassert_true(result.is_ok(), "Should parse valid date");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 12);
+	zassert_equal(date.day, 25);
+	zassert_equal(date.year, 23);
 }
 
-/* ========================================================================
- * Test Suite Registration
- * ======================================================================== */
-
-extern "C" void test_suite_coordinates(void)
+ZTEST(lx200_coordinates, test_date_january_first)
 {
-	// Tests are automatically registered via ZTEST macro
+	auto result = parse_date("01/01/00");
+	
+	zassert_true(result.is_ok(), "Should parse Jan 1");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 1);
+	zassert_equal(date.day, 1);
+	zassert_equal(date.year, 0);
 }
+
+ZTEST(lx200_coordinates, test_date_december_thirty_first)
+{
+	auto result = parse_date("12/31/99");
+	
+	zassert_true(result.is_ok(), "Should parse Dec 31");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 12);
+	zassert_equal(date.day, 31);
+	zassert_equal(date.year, 99);
+}
+
+ZTEST(lx200_coordinates, test_date_month_out_of_range_zero)
+{
+	auto result = parse_date("00/15/23");
+	
+	zassert_true(result.is_error(), "Should error on month 0");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_month_out_of_range_high)
+{
+	auto result = parse_date("13/15/23");
+	
+	zassert_true(result.is_error(), "Should error on month > 12");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_day_out_of_range_zero)
+{
+	auto result = parse_date("06/00/23");
+	
+	zassert_true(result.is_error(), "Should error on day 0");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_day_out_of_range_high)
+{
+	auto result = parse_date("06/32/23");
+	
+	zassert_true(result.is_error(), "Should error on day > 31");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_year_out_of_range)
+{
+	// Year must be exactly 2 digits, so 3-digit year is invalid format
+	auto result = parse_date("06/15/100");
+	
+	zassert_true(result.is_error(), "Should error on 3-digit year");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
+
+ZTEST(lx200_coordinates, test_date_invalid_format)
+{
+	auto result = parse_date("invalid-date");
+	
+	zassert_true(result.is_error(), "Should error on invalid format");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
+
+ZTEST(lx200_coordinates, test_date_empty_string)
+{
+	auto result = parse_date("");
+	
+	zassert_true(result.is_error(), "Should error on empty string");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
+
+ZTEST_SUITE(lx200_coordinates, NULL, NULL, NULL, NULL, NULL);

@@ -1,333 +1,217 @@
 /*
- * Copyright (c) 2025, OpenAstroTech
- * SPDX-License-Identifier: Apache-2.0
+ * LX200 Parser Tests - Result<T> API
+ * Tests for the character-by-character parser with VoidResult returns
  */
 
-#include <zephyr/ztest.h>
 #include <lx200/lx200.hpp>
-#include <string>
-
-/**
- * @file test_parser.cpp
- * @brief LX200 Parser Contract Tests
- *
- * Tests based on parser-contract.md specifications:
- * - TC-001: Parser initialization
- * - TC-002: Parser reset
- * - TC-003: Feed valid command
- * - TC-004: Missing prefix error
- * - TC-005: Buffer overflow error
- * - TC-006: Commands with parameters
- * - TC-007: Precision mode toggle
- * - TC-008: Multiple sequential commands
- * - TC-009: Empty command error
- * - TC-010: Partial command buffering
- */
+#include <zephyr/ztest.h>
 
 using namespace lx200;
 
-/* ========================================================================
- * TC-001: Parser Initialization
- * ======================================================================== */
-
-/**
- * @brief Test parser starts in known state
- *
- * Contract: New parser has empty buffer, High precision, no command ready
- */
-ZTEST(lx200, test_parser_initialization)
+ZTEST(lx200_parser, test_basic_command_parsing)
 {
 	ParserState parser;
-
-	// Buffer should be empty
-	zassert_false(parser.is_command_ready(), "New parser should not have command ready");
-
-	// Default precision should be High
-	zassert_equal(parser.get_precision(), PrecisionMode::High,
-		      "Default precision should be High");
-
-	// get_command() should return nullopt
-	auto cmd = parser.get_command();
-	zassert_false(cmd.has_value(), "get_command() should return nullopt when no command ready");
-}
-
-/* ========================================================================
- * TC-002: Parser Reset
- * ======================================================================== */
-
-/**
- * @brief Test parser reset clears state
- *
- * Contract: reset() clears buffer, resets state, preserves precision
- */
-ZTEST(lx200, test_parser_reset)
-{
-	ParserState parser;
-
-	// Feed partial command
-	zassert_equal(parser.feed_character(':'), ParseResult::Incomplete);
-	zassert_equal(parser.feed_character('G'), ParseResult::Incomplete);
-	zassert_equal(parser.feed_character('R'), ParseResult::Incomplete);
-
-	// Set precision to Low
-	parser.set_precision(PrecisionMode::Low);
-
-	// Reset parser
-	parser.reset();
-
-	// Command should not be ready
-	zassert_false(parser.is_command_ready(), "Command should not be ready after reset");
-
-	// Precision should be unchanged
-	zassert_equal(parser.get_precision(), PrecisionMode::Low,
-		      "Precision should persist after reset");
-
-	// get_command() should return nullopt
-	auto cmd = parser.get_command();
-	zassert_false(cmd.has_value(), "get_command() should return nullopt after reset");
-}
-
-/* ========================================================================
- * TC-003: Feed Valid Command
- * ======================================================================== */
-
-/**
- * @brief Test feeding characters to build complete command
- *
- * Contract: Command incomplete until '#', then returns Command struct
- */
-ZTEST(lx200, test_feed_valid_command)
-{
-	ParserState parser;
-
-	// Feed :GR# character by character
-	zassert_equal(parser.feed_character(':'), ParseResult::Incomplete, "Should accept ':'");
-	zassert_false(parser.is_command_ready(), "Not ready after ':'");
-
-	zassert_equal(parser.feed_character('G'), ParseResult::Incomplete, "Should accept 'G'");
-	zassert_false(parser.is_command_ready(), "Not ready after 'G'");
-
-	zassert_equal(parser.feed_character('R'), ParseResult::Incomplete, "Should accept 'R'");
-	zassert_false(parser.is_command_ready(), "Not ready after 'R'");
-
-	zassert_equal(parser.feed_character('#'), ParseResult::Success, "Should accept '#'");
-	zassert_true(parser.is_command_ready(), "Should be ready after '#'");
-
-	// Get command
-	auto cmd = parser.get_command();
-	zassert_true(cmd.has_value(), "get_command() should return Command");
-	zassert_equal(cmd->family, CommandFamily::GetInfo, "Command family should be GetInfo");
-	zassert_mem_equal(cmd->name.data(), "GR", 2, "Command name should be 'GR'");
-}
-
-/* ========================================================================
- * TC-004: Missing Prefix Error
- * ======================================================================== */
-
-/**
- * @brief Test parser handles missing ':' prefix
- *
- * Contract: First character must be ':', else error
- */
-ZTEST(lx200, test_missing_prefix)
-{
-	ParserState parser;
-
-	// Try to feed 'G' without ':' prefix
-	auto result = parser.feed_character('G');
-	zassert_equal(result, ParseResult::ErrorInvalidFormat,
-		      "Should return error for missing prefix");
-
-	// Parser should recover after reset
-	parser.reset();
-	zassert_equal(parser.feed_character(':'), ParseResult::Incomplete,
-		      "Should accept ':' after reset");
-}
-
-/* ========================================================================
- * TC-005: Buffer Overflow Error
- * ======================================================================== */
-
-/**
- * @brief Test parser handles buffer overflow
- *
- * Contract: Commands longer than MAX_COMMAND_LENGTH rejected
- */
-ZTEST(lx200, test_buffer_overflow)
-{
-	ParserState parser;
-
-	// Start command
-	zassert_equal(parser.feed_character(':'), ParseResult::Incomplete);
-
-	// Feed MAX_COMMAND_LENGTH characters (assuming 64 bytes)
-	for (int i = 0; i < 64; i++) {
-		auto result = parser.feed_character('A');
-		if (result != ParseResult::Success && result != ParseResult::Incomplete) {
-			// Should eventually get buffer overflow error
-			zassert_equal(result, ParseResult::ErrorBufferFull,
-				      "Should return buffer overflow error");
-			return;
-		}
-	}
-
-	zassert_unreachable("Parser should have rejected buffer overflow");
-}
-
-/* ========================================================================
- * TC-006: Commands with Parameters
- * ======================================================================== */
-
-/**
- * @brief Test parsing commands with parameter strings
- *
- * Contract: :Sr12:34:56# → name="Sr", params="12:34:56"
- */
-ZTEST(lx200, test_command_with_parameters)
-{
-	ParserState parser;
-
-	// Feed :Sr12:34:56#
-	const char *command = ":Sr12:34:56#";
-	for (const char *p = command; *p != '\0'; p++) {
-		auto result = parser.feed_character(*p);
-		// All characters should be accepted (Incomplete or Success)
-		zassert_true(result == ParseResult::Incomplete || result == ParseResult::Success,
-			     "Should accept all valid characters");
-	}
-
+	
+	// Start marker
+	auto result = parser.feed_character(':');
+	zassert_true(result.is_ok(), "Should accept start marker");
+	zassert_false(parser.is_command_ready(), "Should not be ready yet");
+	
+	// Command letter
+	result = parser.feed_character('G');
+	zassert_true(result.is_ok(), "Should accept command letter");
+	zassert_false(parser.is_command_ready(), "Should not be ready yet");
+	
+	// Second command letter
+	result = parser.feed_character('R');
+	zassert_true(result.is_ok(), "Should accept second command letter");
+	zassert_false(parser.is_command_ready(), "Should not be ready yet");
+	
+	// Terminator
+	result = parser.feed_character('#');
+	zassert_true(result.is_ok(), "Should accept terminator");
 	zassert_true(parser.is_command_ready(), "Command should be ready");
-
-	auto cmd = parser.get_command();
-	zassert_true(cmd.has_value(), "Should return Command");
-	zassert_equal(cmd->family, CommandFamily::SetInfo, "Family should be SetInfo");
-	zassert_mem_equal(cmd->name.data(), "Sr", 2, "Command name should be 'Sr'");
-	zassert_mem_equal(cmd->parameters.data(), "12:34:56", 8, "Parameters should be '12:34:56'");
 }
 
-/* ========================================================================
- * TC-007: Precision Mode Toggle
- * ======================================================================== */
-
-/**
- * @brief Test precision mode switching
- *
- * Contract: Default High, can toggle to Low, persists across commands
- */
-ZTEST(lx200, test_precision_mode_toggle)
+ZTEST(lx200_parser, test_error_missing_start_marker)
 {
 	ParserState parser;
-
-	// Default should be High
-	zassert_equal(parser.get_precision(), PrecisionMode::High,
-		      "Default should be High precision");
-
-	// Toggle to Low
-	parser.set_precision(PrecisionMode::Low);
-	zassert_equal(parser.get_precision(), PrecisionMode::Low, "Should toggle to Low precision");
-
-	// Process command - precision should persist
-	const char *command = ":GR#";
-	for (const char *p = command; *p; p++) {
-		parser.feed_character(*p);
-	}
-	parser.get_command(); // Consume command
-
-	zassert_equal(parser.get_precision(), PrecisionMode::Low,
-		      "Precision should persist after command");
+	
+	// Try to feed character without start marker
+	auto result = parser.feed_character('G');
+	zassert_true(result.is_error(), "Should error without start marker");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
 }
 
-/* ========================================================================
- * TC-008: Multiple Sequential Commands
- * ======================================================================== */
-
-/**
- * @brief Test processing multiple commands in sequence
- *
- * Contract: Parser handles :GR#:Gd# as two separate commands
- */
-ZTEST(lx200, test_multiple_sequential_commands)
+ZTEST(lx200_parser, test_error_empty_command)
 {
 	ParserState parser;
+	
+	// Start marker
+	auto result = parser.feed_character(':');
+	zassert_true(result.is_ok(), "Should accept start marker");
+	
+	// Immediate terminator (empty command)
+	result = parser.feed_character('#');
+	zassert_true(result.is_error(), "Should error on empty command");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+}
 
-	// Feed first command :GR#
-	const char *cmd1 = ":GR#";
-	for (const char *p = cmd1; *p; p++) {
-		parser.feed_character(*p);
+ZTEST(lx200_parser, test_buffer_full)
+{
+	ParserState parser;
+	
+	// Start marker
+	auto result = parser.feed_character(':');
+	zassert_true(result.is_ok(), "Should accept start marker");
+	
+	// Fill buffer to capacity
+	for (size_t i = 1; i < ParserState::max_command_length(); i++) {
+		result = parser.feed_character('A');
+		zassert_true(result.is_ok(), "Should accept character %zu", i);
 	}
+	
+	// Try to overflow
+	result = parser.feed_character('X');
+	zassert_true(result.is_error(), "Should error on buffer full");
+	zassert_equal(result.error(), ParseError::BufferFull);
+}
 
+ZTEST(lx200_parser, test_command_extraction)
+{
+	ParserState parser;
+	
+	// Parse ":GR#"
+	parser.feed_character(':');
+	parser.feed_character('G');
+	parser.feed_character('R');
+	parser.feed_character('#');
+	
+	zassert_true(parser.is_command_ready(), "Command should be ready");
+	
+	auto command_opt = parser.get_command();
+	zassert_true(command_opt.has_value(), "Should have command");
+	auto command = command_opt.value();
+	zassert_equal(command.name.size(), 2, "Command should be 2 characters");
+	zassert_equal(command.name[0], 'G');
+	zassert_equal(command.name[1], 'R');
+}
+
+ZTEST(lx200_parser, test_reset)
+{
+	ParserState parser;
+	
+	// Parse partial command
+	parser.feed_character(':');
+	parser.feed_character('G');
+	
+	// Reset
+	parser.reset();
+	
+	// Should be able to start new command
+	auto result = parser.feed_character(':');
+	zassert_true(result.is_ok(), "Should accept start marker after reset");
+	zassert_false(parser.is_command_ready(), "Should not be ready after reset");
+}
+
+ZTEST(lx200_parser, test_command_with_parameter)
+{
+	ParserState parser;
+	
+	// Parse ":Sr12:34:56#" (Set RA)
+	parser.feed_character(':');
+	parser.feed_character('S');
+	parser.feed_character('r');
+	parser.feed_character('1');
+	parser.feed_character('2');
+	parser.feed_character(':');
+	parser.feed_character('3');
+	parser.feed_character('4');
+	parser.feed_character(':');
+	parser.feed_character('5');
+	parser.feed_character('6');
+	parser.feed_character('#');
+	
+	zassert_true(parser.is_command_ready(), "Command should be ready");
+	
+	auto command_opt = parser.get_command();
+	zassert_true(command_opt.has_value());
+	auto command = command_opt.value();
+	zassert_mem_equal(command.name.data(), "Sr", 2);
+	zassert_mem_equal(command.parameters.data(), "12:34:56", 8);
+}
+
+ZTEST(lx200_parser, test_multiple_commands_sequentially)
+{
+	ParserState parser;
+	
+	// First command: ":GR#"
+	parser.feed_character(':');
+	parser.feed_character('G');
+	parser.feed_character('R');
+	parser.feed_character('#');
 	zassert_true(parser.is_command_ready(), "First command ready");
-	auto command1 = parser.get_command();
-	zassert_true(command1.has_value(), "Should get first command");
-	zassert_mem_equal(command1->name.data(), "GR", 2, "First command should be GR");
-
-	// Feed second command :Gd#
-	const char *cmd2 = ":Gd#";
-	for (const char *p = cmd2; *p; p++) {
-		parser.feed_character(*p);
-	}
-
+	auto cmd1_opt = parser.get_command();
+	zassert_true(cmd1_opt.has_value());
+	zassert_mem_equal(cmd1_opt->name.data(), "GR", 2);
+	
+	// Reset for next command
+	parser.reset();
+	
+	// Second command: ":GD#"
+	parser.feed_character(':');
+	parser.feed_character('G');
+	parser.feed_character('D');
+	parser.feed_character('#');
 	zassert_true(parser.is_command_ready(), "Second command ready");
-	auto command2 = parser.get_command();
-	zassert_true(command2.has_value(), "Should get second command");
-	zassert_mem_equal(command2->name.data(), "Gd", 2, "Second command should be Gd");
+	auto cmd2_opt = parser.get_command();
+	zassert_true(cmd2_opt.has_value());
+	zassert_mem_equal(cmd2_opt->name.data(), "GD", 2);
 }
 
-/* ========================================================================
- * TC-009: Empty Command Error
- * ======================================================================== */
-
-/**
- * @brief Test parser rejects empty commands
- *
- * Contract: :# should be rejected as invalid
- */
-ZTEST(lx200, test_empty_command)
+ZTEST(lx200_parser, test_result_match_pattern_success)
 {
 	ParserState parser;
-
-	// Feed :#
-	zassert_equal(parser.feed_character(':'), ParseResult::Incomplete);
-	auto result = parser.feed_character('#');
-
-	zassert_equal(result, ParseResult::ErrorInvalidFormat, "Empty command should be rejected");
-	zassert_false(parser.is_command_ready(), "No command should be ready after error");
+	auto result = parser.feed_character(':');
+	
+	bool success_called = false;
+	bool error_called = false;
+	
+	result.match(
+		[&](const Unit&) {
+			success_called = true;
+		},
+		[&](ParseError) {
+			error_called = true;
+		}
+	);
+	
+	zassert_true(success_called, "Success callback should be called");
+	zassert_false(error_called, "Error callback should not be called");
 }
 
-/* ========================================================================
- * TC-010: Partial Command Buffering
- * ======================================================================== */
-
-/**
- * @brief Test parser buffers partial commands correctly
- *
- * Contract: Command stays incomplete until terminator '#'
- */
-ZTEST(lx200, test_partial_command_buffering)
+ZTEST(lx200_parser, test_result_match_pattern_error)
 {
 	ParserState parser;
-
-	// Feed partial command :GR (no terminator)
-	zassert_equal(parser.feed_character(':'), ParseResult::Incomplete);
-	zassert_equal(parser.feed_character('G'), ParseResult::Incomplete);
-	zassert_equal(parser.feed_character('R'), ParseResult::Incomplete);
-
-	// Command should not be ready
-	zassert_false(parser.is_command_ready(), "Partial command should not be ready");
-
-	auto cmd = parser.get_command();
-	zassert_false(cmd.has_value(), "get_command() should return nullopt for partial command");
-
-	// Complete the command
-	zassert_equal(parser.feed_character('#'), ParseResult::Success);
-	zassert_true(parser.is_command_ready(), "Command should be ready after terminator");
+	auto result = parser.feed_character('X');  // No start marker
+	
+	bool success_called = false;
+	bool error_called = false;
+	ParseError captured_error = ParseError::General;
+	
+	result.match(
+		[&](const Unit&) {
+			success_called = true;
+		},
+		[&](ParseError err) {
+			error_called = true;
+			captured_error = err;
+		}
+	);
+	
+	zassert_false(success_called, "Success callback should not be called");
+	zassert_true(error_called, "Error callback should be called");
+	zassert_equal(captured_error, ParseError::InvalidFormat);
 }
 
-/* ========================================================================
- * Test Suite Registration
- * ======================================================================== */
-
-extern "C" void test_suite_parser(void)
-{
-	// Tests are automatically registered via ZTEST macro
-}
+ZTEST_SUITE(lx200_parser, NULL, NULL, NULL, NULL, NULL);

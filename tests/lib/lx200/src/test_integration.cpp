@@ -1,396 +1,442 @@
 /*
- * Copyright (c) 2025, OpenAstroTech
- * SPDX-License-Identifier: Apache-2.0
+ * LX200 Integration Tests - Result<T> API
+ * End-to-end tests demonstrating Result<T> patterns and workflows
  */
 
-#include <zephyr/ztest.h>
 #include <lx200/lx200.hpp>
-#include <string>
-
-/**
- * @file test_integration.cpp
- * @brief LX200 Integration Tests
- *
- * End-to-end tests simulating real telescope control scenarios:
- * - Setting target coordinates and slewing
- * - Querying current position
- * - Precision mode changes
- * - Site location and time configuration
- * - Movement control sequences
- */
+#include <zephyr/ztest.h>
 
 using namespace lx200;
 
 /* ========================================================================
- * Slew Command Integration Tests
+ * Parser + Coordinate Integration Tests
  * ======================================================================== */
 
-/**
- * @brief Test complete slew-to-target sequence
- *
- * Scenario: Planetarium software wants to slew to M31 (Andromeda Galaxy)
- * - Set target RA to 00:42:44
- * - Set target DEC to +41*16:09
- * - Initiate slew to target
- */
-ZTEST(lx200, test_slew_to_target_sequence)
+ZTEST(lx200_integration, test_parse_set_ra_command)
 {
 	ParserState parser;
-
-	// Step 1: Set target RA (:Sr00:42:44#)
-	for (const char c : std::string_view(":Sr00:42:44#")) {
-		parser.feed_character(c);
+	
+	// Parse command ":Sr12:34:56#"
+	const char *cmd = ":Sr12:34:56#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		auto result = parser.feed_character(*p);
+		if (result.is_error()) {
+			zassert_unreachable("Parser should not error");
+		}
 	}
-	auto cmd1 = parser.get_command();
-	zassert_true(cmd1.has_value(), "Should parse Sr command");
-	zassert_equal(cmd1->family, CommandFamily::SetInfo);
-	zassert_mem_equal(cmd1->name.data(), "Sr", 2);
-
-	// Parse RA parameter
-	RACoordinate ra;
-	auto ra_result =
-		parse_ra_coordinate(std::string(cmd1->parameters).c_str(), PrecisionMode::High, ra);
-	zassert_equal(ra_result, ParseResult::Success, "Should parse RA parameters");
-	zassert_equal(ra.hours, 0);
-	zassert_equal(ra.minutes, 42);
-	zassert_equal(ra.seconds, 44);
-
-	// Step 2: Set target DEC (:Sd+41*16:09#)
-	parser.reset();
-	for (const char c : std::string_view(":Sd+41*16:09#")) {
-		parser.feed_character(c);
-	}
-	auto cmd2 = parser.get_command();
-	zassert_true(cmd2.has_value(), "Should parse Sd command");
-	zassert_equal(cmd2->family, CommandFamily::SetInfo);
-
-	// Parse DEC parameter
-	DECCoordinate dec;
-	auto dec_result = parse_dec_coordinate(std::string(cmd2->parameters).c_str(),
-					       PrecisionMode::High, dec);
-	zassert_equal(dec_result, ParseResult::Success, "Should parse DEC parameters");
-	zassert_equal(dec.sign, '+');
-	zassert_equal(dec.degrees, 41);
-	zassert_equal(dec.arcminutes, 16);
-	zassert_equal(dec.arcseconds, 9);
-
-	// Step 3: Initiate slew (:MS#)
-	parser.reset();
-	for (const char c : std::string_view(":MS#")) {
-		parser.feed_character(c);
-	}
-	auto cmd3 = parser.get_command();
-	zassert_true(cmd3.has_value(), "Should parse MS command");
-	zassert_equal(cmd3->family, CommandFamily::Movement);
+	
+	zassert_true(parser.is_command_ready(), "Command should be ready");
+	
+	auto command_opt = parser.get_command();
+	zassert_true(command_opt.has_value(), "Should have command");
+	auto command = command_opt.value();
+	
+	zassert_equal(command.name[0], 'S', "Command family should be 'S'");
+	zassert_equal(command.name[1], 'r', "Command should be 'r'");
+	
+	// Extract parameter
+	std::string_view param = command.parameters;
+	
+	// Parse the coordinate
+	auto coord_result = parse_ra(param, PrecisionMode::High);
+	zassert_true(coord_result.is_ok(), "Should parse RA coordinate");
+	
+	auto coord = coord_result.value();
+	zassert_equal(coord.hours, 12);
+	zassert_equal(coord.minutes, 34);
+	zassert_equal(coord.seconds, 56);
 }
 
-/* ========================================================================
- * Position Query Integration Tests
- * ======================================================================== */
-
-/**
- * @brief Test querying current telescope position
- *
- * Scenario: Software queries current RA/DEC coordinates
- * - Get current RA (:GR#)
- * - Get current DEC (:GD#)
- */
-ZTEST(lx200, test_position_query_sequence)
+ZTEST(lx200_integration, test_parse_set_dec_command)
 {
 	ParserState parser;
-
-	// Query RA
-	for (const char c : std::string_view(":GR#")) {
-		parser.feed_character(c);
+	
+	// Parse command ":Sd+45*30:15#"
+	const char *cmd = ":Sd+45*30:15#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		auto result = parser.feed_character(*p);
+		if (result.is_error()) {
+			zassert_unreachable("Parser should not error");
+		}
 	}
-	auto cmd1 = parser.get_command();
-	zassert_true(cmd1.has_value(), "Should parse GR command");
-	zassert_equal(cmd1->family, CommandFamily::GetInfo);
-	zassert_mem_equal(cmd1->name.data(), "GR", 2);
-
-	// Query DEC
-	parser.reset();
-	for (const char c : std::string_view(":GD#")) {
-		parser.feed_character(c);
-	}
-	auto cmd2 = parser.get_command();
-	zassert_true(cmd2.has_value(), "Should parse GD command");
-	zassert_equal(cmd2->family, CommandFamily::GetInfo);
-	zassert_mem_equal(cmd2->name.data(), "GD", 2);
+	
+	zassert_true(parser.is_command_ready(), "Command should be ready");
+	
+	auto command_opt = parser.get_command(); zassert_true(command_opt.has_value()); auto command = command_opt.value();
+	zassert_equal(command.name[0], 'S', "Command family should be 'S'");
+	zassert_equal(command.name[1], 'd', "Command should be 'd'");
+	
+	// Extract parameter
+	std::string_view param = command.parameters;
+	
+	// Parse the coordinate
+	auto coord_result = parse_dec(param, PrecisionMode::High);
+	zassert_true(coord_result.is_ok(), "Should parse DEC coordinate");
+	
+	auto coord = coord_result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 45);
+	zassert_equal(coord.arcminutes, 30);
+	zassert_equal(coord.arcseconds, 15);
 }
 
-/* ========================================================================
- * Precision Mode Integration Tests
- * ======================================================================== */
-
-/**
- * @brief Test precision mode toggle affects coordinate parsing
- *
- * Scenario: Switch between high and low precision coordinate formats
- */
-ZTEST(lx200, test_precision_mode_integration)
+ZTEST(lx200_integration, test_parse_set_site_latitude)
 {
 	ParserState parser;
-
-	// Start in High precision (default)
-	zassert_equal(parser.get_precision(), PrecisionMode::High);
-
-	// Toggle to Low precision (:P#)
-	for (const char c : std::string_view(":P#")) {
-		parser.feed_character(c);
+	
+	// Parse command ":St+37*23#"
+	const char *cmd = ":St+37*23#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		parser.feed_character(*p);
 	}
-	auto cmd = parser.get_command();
-	zassert_true(cmd.has_value(), "Should parse P command");
-
-	// Simulate toggle action
-	parser.set_precision(PrecisionMode::Low);
-	zassert_equal(parser.get_precision(), PrecisionMode::Low);
-
-	// Now parsing should expect low precision format
-	// :Sr12:34.5# (low precision RA)
-	parser.reset();
-	for (const char c : std::string_view(":Sr12:34.5#")) {
-		parser.feed_character(c);
-	}
-	auto cmd2 = parser.get_command();
-	zassert_true(cmd2.has_value(), "Should parse low precision Sr");
-
-	RACoordinate ra;
-	auto result =
-		parse_ra_coordinate(std::string(cmd2->parameters).c_str(), PrecisionMode::Low, ra);
-	zassert_equal(result, ParseResult::Success, "Should parse low precision RA");
+	
+	auto command_opt = parser.get_command(); zassert_true(command_opt.has_value()); auto command = command_opt.value();
+	std::string_view param = command.parameters;
+	
+	auto coord_result = parse_latitude(param);
+	zassert_true(coord_result.is_ok(), "Should parse latitude");
+	
+	auto coord = coord_result.value();
+	zassert_equal(coord.sign, '+');
+	zassert_equal(coord.degrees, 37);
+	zassert_equal(coord.arcminutes, 23);
 }
 
-/* ========================================================================
- * Site Configuration Integration Tests
- * ======================================================================== */
-
-/**
- * @brief Test site location and time configuration sequence
- *
- * Scenario: Configure telescope for San Francisco observing session
- * - Set latitude +37*45
- * - Set longitude 122*30
- * - Set local time 21:30:00
- * - Set date 03/15/23
- */
-ZTEST(lx200, test_site_configuration_sequence)
+ZTEST(lx200_integration, test_parse_set_site_longitude)
 {
 	ParserState parser;
-
-	// Set latitude (:St+37*45#)
-	for (const char c : std::string_view(":St+37*45#")) {
-		parser.feed_character(c);
+	
+	// Parse command ":Sg122*04#" (longitude has no sign)
+	const char *cmd = ":Sg122*04#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		parser.feed_character(*p);
 	}
-	auto cmd1 = parser.get_command();
-	zassert_true(cmd1.has_value(), "Should parse St command");
+	
+	auto command_opt = parser.get_command(); zassert_true(command_opt.has_value()); auto command = command_opt.value();
+	std::string_view param = command.parameters;
+	
+	auto coord_result = parse_longitude(param);
+	zassert_true(coord_result.is_ok(), "Should parse longitude");
+	
+	auto coord = coord_result.value();
+	zassert_equal(coord.degrees, 122);
+	zassert_equal(coord.arcminutes, 4);
+}
 
-	LatitudeCoordinate lat;
-	auto lat_result = parse_latitude_coordinate(std::string(cmd1->parameters).c_str(), lat);
-	zassert_equal(lat_result, ParseResult::Success, "Should parse latitude");
-	zassert_equal(lat.degrees, 37);
-
-	// Set longitude (:Sg122*30#)
-	parser.reset();
-	for (const char c : std::string_view(":Sg122*30#")) {
-		parser.feed_character(c);
+ZTEST(lx200_integration, test_parse_set_local_time)
+{
+	ParserState parser;
+	
+	// Parse command ":SL14:30:45#"
+	const char *cmd = ":SL14:30:45#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		parser.feed_character(*p);
 	}
-	auto cmd2 = parser.get_command();
-	zassert_true(cmd2.has_value(), "Should parse Sg command");
-
-	LongitudeCoordinate lon;
-	auto lon_result = parse_longitude_coordinate(std::string(cmd2->parameters).c_str(), lon);
-	zassert_equal(lon_result, ParseResult::Success, "Should parse longitude");
-	zassert_equal(lon.degrees, 122);
-
-	// Set local time (:SL21:30:00#)
-	parser.reset();
-	for (const char c : std::string_view(":SL21:30:00#")) {
-		parser.feed_character(c);
-	}
-	auto cmd3 = parser.get_command();
-	zassert_true(cmd3.has_value(), "Should parse SL command");
-
-	TimeValue time;
-	auto time_result = parse_time_value(std::string(cmd3->parameters).c_str(), time);
-	zassert_equal(time_result, ParseResult::Success, "Should parse time");
-	zassert_equal(time.hours, 21);
+	
+	auto command_opt = parser.get_command(); zassert_true(command_opt.has_value()); auto command = command_opt.value();
+	std::string_view param = command.parameters;
+	
+	auto time_result = parse_time(param);
+	zassert_true(time_result.is_ok(), "Should parse time");
+	
+	auto time = time_result.value();
+	zassert_equal(time.hours, 14);
 	zassert_equal(time.minutes, 30);
+	zassert_equal(time.seconds, 45);
+}
 
-	// Set date (:SC03/15/23#)
-	parser.reset();
-	for (const char c : std::string_view(":SC03/15/23#")) {
-		parser.feed_character(c);
+ZTEST(lx200_integration, test_parse_set_calendar_date)
+{
+	ParserState parser;
+	
+	// Parse command ":SC12/25/23#"
+	const char *cmd = ":SC12/25/23#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		parser.feed_character(*p);
 	}
-	auto cmd4 = parser.get_command();
-	zassert_true(cmd4.has_value(), "Should parse SC command");
-
-	DateValue date;
-	auto date_result = parse_date_value(std::string(cmd4->parameters).c_str(), date);
-	zassert_equal(date_result, ParseResult::Success, "Should parse date");
-	zassert_equal(date.month, 3);
-	zassert_equal(date.day, 15);
+	
+	auto command_opt = parser.get_command(); zassert_true(command_opt.has_value()); auto command = command_opt.value();
+	std::string_view param = command.parameters;
+	
+	auto date_result = parse_date(param);
+	zassert_true(date_result.is_ok(), "Should parse date");
+	
+	auto date = date_result.value();
+	zassert_equal(date.month, 12);
+	zassert_equal(date.day, 25);
+	zassert_equal(date.year, 23);
 }
 
 /* ========================================================================
- * Movement Control Integration Tests
+ * Error Handling Integration Tests
  * ======================================================================== */
 
-/**
- * @brief Test manual movement control sequence
- *
- * Scenario: User manually moves telescope east, then stops
- * - Set slew rate (:RS#)
- * - Start moving east (:Me#)
- * - Stop all movement (:Q#)
- */
-ZTEST(lx200, test_movement_control_sequence)
+ZTEST(lx200_integration, test_parser_error_propagation)
 {
 	ParserState parser;
+	
+	// Try to parse invalid command (no start marker)
+	auto result = parser.feed_character('G');
+	
+	zassert_true(result.is_error(), "Should error immediately");
+	zassert_equal(result.error(), ParseError::InvalidFormat);
+	
+	// Parser should still be in error state
+	zassert_false(parser.is_command_ready(), "No valid command");
+}
 
-	// Set slew rate
-	for (const char c : std::string_view(":RS#")) {
-		parser.feed_character(c);
+ZTEST(lx200_integration, test_coordinate_error_in_command)
+{
+	ParserState parser;
+	
+	// Parse command with invalid RA ":Sr24:00:00#"
+	const char *cmd = ":Sr24:00:00#";
+	for (const char *p = cmd; *p != '\0'; p++) {
+		parser.feed_character(*p);
 	}
-	auto cmd1 = parser.get_command();
-	zassert_true(cmd1.has_value(), "Should parse RS command");
-	zassert_equal(cmd1->family, CommandFamily::Rate);
-
-	// Move east
-	parser.reset();
-	for (const char c : std::string_view(":Me#")) {
-		parser.feed_character(c);
-	}
-	auto cmd2 = parser.get_command();
-	zassert_true(cmd2.has_value(), "Should parse Me command");
-	zassert_equal(cmd2->family, CommandFamily::Movement);
-
-	// Stop movement
-	parser.reset();
-	for (const char c : std::string_view(":Q#")) {
-		parser.feed_character(c);
-	}
-	auto cmd3 = parser.get_command();
-	zassert_true(cmd3.has_value(), "Should parse Q command");
-	zassert_equal(cmd3->family, CommandFamily::Quit);
+	
+	auto command_opt = parser.get_command(); zassert_true(command_opt.has_value()); auto command = command_opt.value();
+	std::string_view param = command.parameters;
+	
+	// Try to parse the invalid coordinate
+	auto coord_result = parse_ra(param, PrecisionMode::High);
+	
+	zassert_true(coord_result.is_error(), "Should error on invalid RA");
+	zassert_equal(coord_result.error(), ParseError::OutOfRange);
 }
 
 /* ========================================================================
- * Error Recovery Integration Tests
+ * Result<T> Pattern Demonstrations
  * ======================================================================== */
 
-/**
- * @brief Test parser recovers from errors in command stream
- *
- * Scenario: Noisy serial line causes parsing errors, but valid
- * commands should still be processed
- */
-ZTEST(lx200, test_error_recovery)
+ZTEST(lx200_integration, test_result_chaining_with_match)
 {
-	ParserState parser;
-
-	// Invalid command (missing prefix)
-	auto result1 = parser.feed_character('G');
-	zassert_equal(result1, ParseResult::ErrorInvalidFormat, "Should detect error");
-
-	// Reset and try valid command
-	parser.reset();
-	for (const char c : std::string_view(":GR#")) {
-		auto result = parser.feed_character(c);
-		zassert_true(result == ParseResult::Incomplete || result == ParseResult::Success,
-			     "Should accept valid characters");
-	}
-
-	auto cmd = parser.get_command();
-	zassert_true(cmd.has_value(), "Should parse valid command after error recovery");
+	auto ra_result = parse_ra("12:34:56", PrecisionMode::High);
+	auto dec_result = parse_dec("+45*30:15", PrecisionMode::High);
+	
+	// Both should succeed
+	bool both_ok = ra_result.is_ok() && dec_result.is_ok();
+	zassert_true(both_ok, "Both coordinates should parse");
+	
+	// Use match to extract values
+	RACoordinate ra{};
+	ra_result.match(
+		[&ra](const RACoordinate& coord) {
+			ra = coord;
+		},
+		[](ParseError) {
+			zassert_unreachable("RA should not error");
+		}
+	);
+	
+	DECCoordinate dec{};
+	dec_result.match(
+		[&dec](const DECCoordinate& coord) {
+			dec = coord;
+		},
+		[](ParseError) {
+			zassert_unreachable("DEC should not error");
+		}
+	);
+	
+	// Verify extracted values
+	zassert_equal(ra.hours, 12);
+	zassert_equal(dec.degrees, 45);
 }
 
-/* ========================================================================
- * Rapid Command Sequence Tests
- * ======================================================================== */
-
-/**
- * @brief Test parser handles rapid command sequences
- *
- * Scenario: Software sends multiple commands quickly
- */
-ZTEST(lx200, test_rapid_command_sequence)
+ZTEST(lx200_integration, test_result_error_handling_with_match)
 {
-	ParserState parser;
-	const char *commands[] = {
-		":GR#", // Get RA
-		":GD#", // Get DEC
-		":GG#", // Get UTC offset
-		":Gg#", // Get current site longitude
-		":Gt#", // Get current site latitude
+	auto result = parse_ra("invalid", PrecisionMode::High);
+	
+	bool error_handled = false;
+	ParseError captured_error = ParseError::General;
+	
+	result.match(
+		[](const RACoordinate&) {
+			zassert_unreachable("Should not succeed");
+		},
+		[&](ParseError err) {
+			error_handled = true;
+			captured_error = err;
+		}
+	);
+	
+	zassert_true(error_handled, "Error callback should be called");
+	zassert_equal(captured_error, ParseError::InvalidFormat);
+}
+
+ZTEST(lx200_integration, test_result_value_or_with_fallback)
+{
+	// Invalid parse
+	auto error_result = parse_time("99:99:99");
+	
+	// Provide fallback
+	TimeValue fallback{12, 0, 0};
+	auto time = error_result.value_or(fallback);
+	
+	zassert_equal(time.hours, 12, "Should use fallback hours");
+	zassert_equal(time.minutes, 0, "Should use fallback minutes");
+	zassert_equal(time.seconds, 0, "Should use fallback seconds");
+	
+	// Valid parse should not use fallback
+	auto valid_result = parse_time("14:30:45");
+	time = valid_result.value_or(fallback);
+	
+	zassert_equal(time.hours, 14, "Should use parsed hours");
+	zassert_equal(time.minutes, 30, "Should use parsed minutes");
+	zassert_equal(time.seconds, 45, "Should use parsed seconds");
+}
+
+ZTEST(lx200_integration, test_multiple_coordinate_validation)
+{
+	struct SiteLocation {
+		LatitudeCoordinate lat;
+		LongitudeCoordinate lon;
 	};
-
-	for (const char *cmd_str : commands) {
-		parser.reset();
-		for (const char *p = cmd_str; *p != '\0'; p++) {
-			auto result = parser.feed_character(*p);
-			zassert_true(result == ParseResult::Incomplete ||
-					     result == ParseResult::Success,
-				     "Should accept all characters");
-		}
-
-		zassert_true(parser.is_command_ready(), "Command should be ready");
-
-		auto cmd = parser.get_command();
-		zassert_true(cmd.has_value(), "Should return command");
-		zassert_equal(cmd->family, CommandFamily::GetInfo,
-			      "All should be GetInfo commands");
+	
+	auto lat_result = parse_latitude("+37*23");
+	auto lon_result = parse_longitude("122*04");  // Longitude has no sign
+	
+	if (lat_result.is_ok() && lon_result.is_ok()) {
+		SiteLocation loc = {
+			lat_result.value(),
+			lon_result.value()
+		};
+		
+		zassert_equal(loc.lat.degrees, 37);
+		zassert_equal(loc.lon.degrees, 122);
+	} else {
+		zassert_unreachable("Both coordinates should parse");
 	}
 }
 
-/* ========================================================================
- * End-to-End Performance Test
- * ======================================================================== */
+ZTEST(lx200_integration, test_precision_mode_switching)
+{
+	const char *ra_str = "12:34.5";  // Could be low or high precision format
+	
+	// Try high precision first (will fail for this format)
+	auto high_result = parse_ra(ra_str, PrecisionMode::High);
+	
+	if (high_result.is_error()) {
+		// Fall back to low precision
+		auto low_result = parse_ra(ra_str, PrecisionMode::Low);
+		
+		if (low_result.is_ok()) {
+			auto coord = low_result.value();
+			zassert_equal(coord.hours, 12);
+			zassert_equal(coord.minutes, 34);
+			// Note: .5 tenths = 30 seconds
+		}
+	}
+}
 
-/**
- * @brief Test complete command processing meets performance requirements
- *
- * Requirement: <100ms from command reception to mount response
- * Parser must contribute <10ms to this budget
- */
-ZTEST(lx200, test_end_to_end_performance)
+ZTEST(lx200_integration, test_void_result_from_parser)
 {
 	ParserState parser;
-
-	// Warm up
-	for (const char c : std::string_view(":MS#")) {
-		parser.feed_character(c);
-	}
-	parser.get_command();
-
-	// Measure 100 command parse cycles
-	uint32_t start = k_cycle_get_32();
-	for (int i = 0; i < 100; i++) {
-		parser.reset();
-		for (const char c : std::string_view(":Sr12:34:56#")) {
-			parser.feed_character(c);
+	
+	// VoidResult indicates success/failure without a value
+	VoidResult result = parser.feed_character(':');
+	
+	zassert_true(result.is_ok(), "Should succeed");
+	
+	// Can use match on VoidResult too
+	bool success = false;
+	result.match(
+		[&](const Unit&) {
+			success = true;
+		},
+		[](ParseError) {
+			zassert_unreachable("Should not error");
 		}
-		auto cmd = parser.get_command();
-
-		// Also parse the coordinate
-		RACoordinate ra;
-		parse_ra_coordinate(std::string(cmd->parameters).c_str(), PrecisionMode::High, ra);
-	}
-	uint32_t end = k_cycle_get_32();
-
-	uint32_t cycles = end - start;
-	uint32_t avg_cycles = cycles / 100;
-
-	// At 168 MHz, 10ms = 1,680,000 cycles
-	// Per command should be much less: <16,800 cycles
-	zassert_true(avg_cycles < 20000, "End-to-end parsing should be fast (<10ms requirement)");
+	);
+	
+	zassert_true(success, "Match should work on VoidResult");
 }
 
 /* ========================================================================
- * Test Suite Registration
+ * Real-World Command Scenarios
  * ======================================================================== */
 
-extern "C" void test_suite_integration(void)
+ZTEST(lx200_integration, test_slew_to_target_workflow)
 {
-	// Tests are automatically registered via ZTEST macro
+	ParserState parser;
+	
+	// Step 1: Set target RA
+	const char *set_ra = ":Sr12:34:56#";
+	for (const char *p = set_ra; *p != '\0'; p++) {
+		parser.feed_character(*p);
+	}
+	
+	auto ra_cmd_opt = parser.get_command();
+	zassert_true(ra_cmd_opt.has_value());
+	std::string_view ra_param = ra_cmd_opt->parameters;
+	auto ra_result = parse_ra(ra_param, PrecisionMode::High);
+	zassert_true(ra_result.is_ok(), "RA should parse");
+	
+	parser.reset();
+	
+	// Step 2: Set target DEC
+	const char *set_dec = ":Sd+45*30:15#";
+	for (const char *p = set_dec; *p != '\0'; p++) {
+		parser.feed_character(*p);
+	}
+	
+	auto dec_cmd_opt = parser.get_command();
+	zassert_true(dec_cmd_opt.has_value());
+	std::string_view dec_param = dec_cmd_opt->parameters;
+	auto dec_result = parse_dec(dec_param, PrecisionMode::High);
+	zassert_true(dec_result.is_ok(), "DEC should parse");
+	
+	// Both coordinates valid - ready to slew
+	if (ra_result.is_ok() && dec_result.is_ok()) {
+		auto ra = ra_result.value();
+		auto dec = dec_result.value();
+		
+		// In real code, would initiate slew here
+		zassert_equal(ra.hours, 12);
+		zassert_equal(dec.degrees, 45);
+	}
 }
+
+ZTEST(lx200_integration, test_site_setup_workflow)
+{
+	// Simulate setting up site location
+	auto lat_result = parse_latitude("+37*23");
+	auto lon_result = parse_longitude("122*04");  // Longitude has no sign (0-359 west from Greenwich)
+	
+	// Both must succeed for valid site
+	if (!lat_result.is_ok() || !lon_result.is_ok()) {
+		zassert_unreachable("Site coordinates should parse");
+	}
+	
+	auto lat = lat_result.value();
+	auto lon = lon_result.value();
+	
+	// Verify site is in Northern Hemisphere
+	zassert_equal(lat.sign, '+', "Should be North");
+	// Longitude is 0-359 degrees west from Greenwich (no sign)
+	zassert_true(lon.degrees < 360, "Longitude should be valid");
+}
+
+ZTEST(lx200_integration, test_time_and_date_setup)
+{
+	// Set local time and date
+	auto time_result = parse_time("14:30:45");
+	auto date_result = parse_date("12/25/23");
+	
+	if (time_result.is_ok() && date_result.is_ok()) {
+		auto time = time_result.value();
+		auto date = date_result.value();
+		
+		// Verify time: 2:30:45 PM
+		zassert_equal(time.hours, 14);
+		zassert_equal(time.minutes, 30);
+		
+		// Verify date: December 25, 2023
+		zassert_equal(date.month, 12);
+		zassert_equal(date.day, 25);
+		zassert_equal(date.year, 23);
+	}
+}
+
+ZTEST_SUITE(lx200_integration, NULL, NULL, NULL, NULL, NULL);

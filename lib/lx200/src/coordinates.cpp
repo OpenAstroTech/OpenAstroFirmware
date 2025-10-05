@@ -36,481 +36,465 @@ static bool parse_uint(const char* str, size_t len, uint32_t& value) noexcept
 }
 
 /* ========================================================================
- * Right Ascension Parsing
+ * Right Ascension Parsing - Result<T> API
  * ======================================================================== */
 
-ParseResult parse_ra_coordinate(
-    std::string_view str,
-    PrecisionMode mode,
-    RACoordinate& coord
-) noexcept
+Result<RACoordinate> parse_ra(std::string_view str, PrecisionMode mode) noexcept
 {
     if (str.empty()) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<RACoordinate>(ParseError::InvalidFormat);
     }
     
     // Format: HH:MM:SS (high) or HH:MM.T (low)
     size_t colon1_pos = str.find(':');
     if (colon1_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<RACoordinate>(ParseError::InvalidFormat);
     }
     
     // Hours must be exactly 2 digits
     if (colon1_pos != 2) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<RACoordinate>(ParseError::InvalidFormat);
     }
     
     // Parse hours
     uint32_t hours;
     if (!parse_uint(str.data(), colon1_pos, hours)) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<RACoordinate>(ParseError::InvalidFormat);
     }
     if (hours >= 24) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<RACoordinate>(ParseError::OutOfRange);
     }
     
     std::string_view minute_part = str.substr(colon1_pos + 1);
+    
+    RACoordinate coord{};
+    coord.hours = static_cast<uint8_t>(hours);
     
     if (mode == PrecisionMode::High) {
         // High precision: HH:MM:SS
         size_t colon2_pos = minute_part.find(':');
         if (colon2_pos == std::string_view::npos) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         
         // Parse minutes
         uint32_t minutes;
         if (!parse_uint(minute_part.data(), colon2_pos, minutes)) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         if (minutes >= 60) {
-            return ParseResult::ErrorOutOfRange;
+            return Err<RACoordinate>(ParseError::OutOfRange);
         }
         
         // Parse seconds (must be exactly 2 digits, no trailing characters)
         std::string_view second_part = minute_part.substr(colon2_pos + 1);
         if (second_part.size() != 2) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         
         uint32_t seconds;
         if (!parse_uint(second_part.data(), 2, seconds)) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         if (seconds >= 60) {
-            return ParseResult::ErrorOutOfRange;
+            return Err<RACoordinate>(ParseError::OutOfRange);
         }
         
-        coord.hours = static_cast<uint8_t>(hours);
         coord.minutes = static_cast<uint8_t>(minutes);
         coord.seconds = static_cast<uint8_t>(seconds);
     }
     else {
         // Low precision: HH:MM.T
-        // Convert tenths of arcminutes to arcseconds: 0.1 arcmin = 6 arcsec
         size_t dot_pos = minute_part.find('.');
         if (dot_pos == std::string_view::npos) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         
         // Parse minutes
         uint32_t minutes;
         if (!parse_uint(minute_part.data(), dot_pos, minutes)) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         if (minutes >= 60) {
-            return ParseResult::ErrorOutOfRange;
+            return Err<RACoordinate>(ParseError::OutOfRange);
         }
         
         // Parse tenths (must be exactly 1 digit, no trailing characters)
         std::string_view tenth_part = minute_part.substr(dot_pos + 1);
         if (tenth_part.size() != 1) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         
         uint32_t tenths;
         if (!parse_uint(tenth_part.data(), 1, tenths)) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<RACoordinate>(ParseError::InvalidFormat);
         }
         if (tenths >= 10) {
-            return ParseResult::ErrorOutOfRange;
+            return Err<RACoordinate>(ParseError::OutOfRange);
         }
         
-        coord.hours = static_cast<uint8_t>(hours);
         coord.minutes = static_cast<uint8_t>(minutes);
         coord.seconds = static_cast<uint8_t>(tenths * 6);  // Convert tenths to seconds
     }
     
-    return ParseResult::Success;
+    return Ok(coord);
 }
 
 /* ========================================================================
- * Declination Parsing
+ * Declination Parsing - Result<T> API
  * ======================================================================== */
 
-ParseResult parse_dec_coordinate(
-    std::string_view str,
-    PrecisionMode mode,
-    DECCoordinate& coord
-) noexcept
+Result<DECCoordinate> parse_dec(std::string_view str, PrecisionMode mode) noexcept
 {
     if (str.empty()) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<DECCoordinate>(ParseError::InvalidFormat);
     }
     
-    // Format: sDD*MM:SS or sDD*MM
-    // Check sign
-    if (str[0] != '+' && str[0] != '-') {
-        return ParseResult::ErrorInvalidFormat;
-    }
+    // Must start with sign
     char sign = str[0];
-    std::string_view str_nosign = str.substr(1); // Skip sign
-    
-    // Find degree separator (*) 
-    size_t star_pos = str_nosign.find('*');
-    if (star_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+    if (sign != '+' && sign != '-') {
+        return Err<DECCoordinate>(ParseError::InvalidFormat);
     }
     
-    // Parse degrees
+    // Find degree separator
+    size_t deg_sep = str.find('*');
+    if (deg_sep == std::string_view::npos) {
+        return Err<DECCoordinate>(ParseError::InvalidFormat);
+    }
+    
+    // Parse degrees (2 digits after sign)
+    if (deg_sep != 3) {
+        return Err<DECCoordinate>(ParseError::InvalidFormat);
+    }
+    
     uint32_t degrees;
-    if (!parse_uint(str_nosign.data(), star_pos, degrees)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(str.data() + 1, 2, degrees)) {
+        return Err<DECCoordinate>(ParseError::InvalidFormat);
     }
     if (degrees > 90) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<DECCoordinate>(ParseError::OutOfRange);
     }
     
-    std::string_view arcmin_part = str_nosign.substr(star_pos + 1);
+    std::string_view arcmin_part = str.substr(deg_sep + 1);
+    
+    DECCoordinate coord{};
+    coord.sign = sign;
+    coord.degrees = static_cast<uint8_t>(degrees);
     
     if (mode == PrecisionMode::High) {
         // High precision: sDD*MM:SS or sDD*MM'SS
-        size_t sep_pos = arcmin_part.find(':');
+        size_t sep_pos = arcmin_part.find_first_of(":'");
         if (sep_pos == std::string_view::npos) {
-            sep_pos = arcmin_part.find('\'');  // Try apostrophe
+            return Err<DECCoordinate>(ParseError::InvalidFormat);
         }
         
-        if (sep_pos != std::string_view::npos) {
-            // Parse arcminutes
-            uint32_t arcminutes;
-            if (!parse_uint(arcmin_part.data(), sep_pos, arcminutes)) {
-                return ParseResult::ErrorInvalidFormat;
-            }
-            if (arcminutes >= 60) {
-                return ParseResult::ErrorOutOfRange;
-            }
-            
-            // Parse arcseconds (must be exactly 2 digits, no trailing characters)
-            std::string_view arcsec_part = arcmin_part.substr(sep_pos + 1);
-            if (arcsec_part.size() != 2) {
-                return ParseResult::ErrorInvalidFormat;
-            }
-            
-            uint32_t arcseconds;
-            if (!parse_uint(arcsec_part.data(), 2, arcseconds)) {
-                return ParseResult::ErrorInvalidFormat;
-            }
-            if (arcseconds >= 60) {
-                return ParseResult::ErrorOutOfRange;
-            }
-            
-            // DEC 90° is only valid when arcminutes and arcseconds are both zero
-            if (degrees == 90 && (arcminutes > 0 || arcseconds > 0)) {
-                return ParseResult::ErrorOutOfRange;
-            }
-            
-            coord.sign = sign;
-            coord.degrees = static_cast<uint8_t>(degrees);
-            coord.arcminutes = static_cast<uint8_t>(arcminutes);
-            coord.arcseconds = static_cast<uint8_t>(arcseconds);
+        // Parse arcminutes
+        uint32_t arcminutes;
+        if (!parse_uint(arcmin_part.data(), sep_pos, arcminutes)) {
+            return Err<DECCoordinate>(ParseError::InvalidFormat);
         }
-        else {
-            // Maybe low precision format even in high mode
-            return ParseResult::ErrorInvalidFormat;
+        if (arcminutes >= 60) {
+            return Err<DECCoordinate>(ParseError::OutOfRange);
         }
+        
+        // Parse arcseconds (must be exactly 2 digits)
+        std::string_view arcsec_part = arcmin_part.substr(sep_pos + 1);
+        if (arcsec_part.size() != 2) {
+            return Err<DECCoordinate>(ParseError::InvalidFormat);
+        }
+        
+        uint32_t arcseconds;
+        if (!parse_uint(arcsec_part.data(), 2, arcseconds)) {
+            return Err<DECCoordinate>(ParseError::InvalidFormat);
+        }
+        if (arcseconds >= 60) {
+            return Err<DECCoordinate>(ParseError::OutOfRange);
+        }
+        
+        // DEC 90° is only valid when arcminutes and arcseconds are zero
+        if (degrees == 90 && (arcminutes > 0 || arcseconds > 0)) {
+            return Err<DECCoordinate>(ParseError::OutOfRange);
+        }
+        
+        coord.arcminutes = static_cast<uint8_t>(arcminutes);
+        coord.arcseconds = static_cast<uint8_t>(arcseconds);
     }
     else {
-        // Low precision: sDD*MM (must be exactly 2 digits, no trailing characters)
+        // Low precision: sDD*MM (must be exactly 2 digits)
         if (arcmin_part.size() != 2) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<DECCoordinate>(ParseError::InvalidFormat);
         }
         
         uint32_t arcminutes;
         if (!parse_uint(arcmin_part.data(), 2, arcminutes)) {
-            return ParseResult::ErrorInvalidFormat;
+            return Err<DECCoordinate>(ParseError::InvalidFormat);
         }
         if (arcminutes >= 60) {
-            return ParseResult::ErrorOutOfRange;
+            return Err<DECCoordinate>(ParseError::OutOfRange);
         }
         
-        // DEC 90° is only valid when arcminutes are zero (arcseconds always 0 in low precision)
+        // DEC 90° is only valid when arcminutes are zero
         if (degrees == 90 && arcminutes > 0) {
-            return ParseResult::ErrorOutOfRange;
+            return Err<DECCoordinate>(ParseError::OutOfRange);
         }
         
-        coord.sign = sign;
-        coord.degrees = static_cast<uint8_t>(degrees);
         coord.arcminutes = static_cast<uint8_t>(arcminutes);
         coord.arcseconds = 0;
     }
     
-    return ParseResult::Success;
+    return Ok(coord);
 }
 
 /* ========================================================================
- * Latitude Parsing
+ * Latitude Parsing - Result<T> API
  * ======================================================================== */
 
-ParseResult parse_latitude_coordinate(
-    std::string_view str,
-    LatitudeCoordinate& coord
-) noexcept
+Result<LatitudeCoordinate> parse_latitude(std::string_view str) noexcept
 {
     if (str.empty()) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
     }
     
-    // Format: sDD*MM
-    if (str[0] != '+' && str[0] != '-') {
-        return ParseResult::ErrorInvalidFormat;
-    }
+    // Must start with sign
     char sign = str[0];
-    std::string_view str_nosign = str.substr(1); // Skip sign
+    if (sign != '+' && sign != '-') {
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
+    }
     
     // Find degree separator
-    size_t star_pos = str_nosign.find('*');
-    if (star_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+    size_t deg_sep = str.find('*');
+    if (deg_sep == std::string_view::npos) {
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
     }
     
-    // Parse degrees
+    // Parse degrees (2 digits after sign)
+    if (deg_sep != 3) {
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
+    }
+    
     uint32_t degrees;
-    if (!parse_uint(str_nosign.data(), star_pos, degrees)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(str.data() + 1, 2, degrees)) {
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
     }
     if (degrees > 90) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<LatitudeCoordinate>(ParseError::OutOfRange);
     }
     
-    // Parse arcminutes (must be exactly 2 digits, no trailing characters)
-    std::string_view arcmin_part = str_nosign.substr(star_pos + 1);
+    // Parse arcminutes (must be exactly 2 digits)
+    std::string_view arcmin_part = str.substr(deg_sep + 1);
     if (arcmin_part.size() != 2) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
     }
     
     uint32_t arcminutes;
     if (!parse_uint(arcmin_part.data(), 2, arcminutes)) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<LatitudeCoordinate>(ParseError::InvalidFormat);
     }
     if (arcminutes >= 60) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<LatitudeCoordinate>(ParseError::OutOfRange);
     }
     
     // Latitude 90° is only valid when arcminutes are zero
     if (degrees == 90 && arcminutes > 0) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<LatitudeCoordinate>(ParseError::OutOfRange);
     }
     
+    LatitudeCoordinate coord{};
     coord.sign = sign;
     coord.degrees = static_cast<uint8_t>(degrees);
     coord.arcminutes = static_cast<uint8_t>(arcminutes);
     
-    return ParseResult::Success;
+    return Ok(coord);
 }
 
 /* ========================================================================
- * Longitude Parsing
+ * Longitude Parsing - Result<T> API
  * ======================================================================== */
 
-ParseResult parse_longitude_coordinate(
-    std::string_view str,
-    LongitudeCoordinate& coord
-) noexcept
+Result<LongitudeCoordinate> parse_longitude(std::string_view str) noexcept
 {
     if (str.empty()) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<LongitudeCoordinate>(ParseError::InvalidFormat);
     }
     
-    // Format: DDD*MM
-    size_t star_pos = str.find('*');
-    if (star_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+    // Find degree separator
+    size_t deg_sep = str.find('*');
+    if (deg_sep == std::string_view::npos) {
+        return Err<LongitudeCoordinate>(ParseError::InvalidFormat);
     }
     
-    // Parse degrees (0-359)
+    // Parse degrees (3 digits)
+    if (deg_sep != 3) {
+        return Err<LongitudeCoordinate>(ParseError::InvalidFormat);
+    }
+    
     uint32_t degrees;
-    if (!parse_uint(str.data(), star_pos, degrees)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(str.data(), 3, degrees)) {
+        return Err<LongitudeCoordinate>(ParseError::InvalidFormat);
     }
     if (degrees >= 360) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<LongitudeCoordinate>(ParseError::OutOfRange);
     }
     
-    // Parse arcminutes
-    std::string_view arcmin_part = str.substr(star_pos + 1);
+    // Parse arcminutes (must be exactly 2 digits)
+    std::string_view arcmin_part = str.substr(deg_sep + 1);
     if (arcmin_part.size() != 2) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<LongitudeCoordinate>(ParseError::InvalidFormat);
     }
+    
     uint32_t arcminutes;
     if (!parse_uint(arcmin_part.data(), 2, arcminutes)) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<LongitudeCoordinate>(ParseError::InvalidFormat);
     }
     if (arcminutes >= 60) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<LongitudeCoordinate>(ParseError::OutOfRange);
     }
     
+    LongitudeCoordinate coord{};
     coord.degrees = static_cast<uint16_t>(degrees);
     coord.arcminutes = static_cast<uint8_t>(arcminutes);
     
-    return ParseResult::Success;
+    return Ok(coord);
 }
 
 /* ========================================================================
- * Time Parsing
+ * Time Parsing - Result<T> API
  * ======================================================================== */
 
-ParseResult parse_time_value(
-    std::string_view str,
-    TimeValue& time
-) noexcept
+Result<TimeValue> parse_time(std::string_view str) noexcept
 {
     if (str.empty()) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<TimeValue>(ParseError::InvalidFormat);
     }
     
     // Format: HH:MM:SS
     size_t colon1_pos = str.find(':');
     if (colon1_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<TimeValue>(ParseError::InvalidFormat);
     }
     
-    // Parse hours
+    // Parse hours (must be 2 digits)
+    if (colon1_pos != 2) {
+        return Err<TimeValue>(ParseError::InvalidFormat);
+    }
+    
     uint32_t hours;
-    if (!parse_uint(str.data(), colon1_pos, hours)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(str.data(), 2, hours)) {
+        return Err<TimeValue>(ParseError::InvalidFormat);
     }
     if (hours >= 24) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<TimeValue>(ParseError::OutOfRange);
     }
     
     std::string_view minute_part = str.substr(colon1_pos + 1);
     size_t colon2_pos = minute_part.find(':');
     if (colon2_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<TimeValue>(ParseError::InvalidFormat);
     }
     
-    // Parse minutes
+    // Parse minutes (must be 2 digits)
+    if (colon2_pos != 2) {
+        return Err<TimeValue>(ParseError::InvalidFormat);
+    }
+    
     uint32_t minutes;
-    if (!parse_uint(minute_part.data(), colon2_pos, minutes)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(minute_part.data(), 2, minutes)) {
+        return Err<TimeValue>(ParseError::InvalidFormat);
     }
     if (minutes >= 60) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<TimeValue>(ParseError::OutOfRange);
     }
     
-    // Parse seconds
+    // Parse seconds (must be exactly 2 digits, no trailing characters)
     std::string_view second_part = minute_part.substr(colon2_pos + 1);
     if (second_part.size() != 2) {
-        return ParseResult::ErrorInvalidFormat;
-    }
-    uint32_t seconds;
-    if (!parse_uint(second_part.data(), 2, seconds)) {
-        return ParseResult::ErrorInvalidFormat;
-    }
-    if (seconds >= 60) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<TimeValue>(ParseError::InvalidFormat);
     }
     
+    uint32_t seconds;
+    if (!parse_uint(second_part.data(), 2, seconds)) {
+        return Err<TimeValue>(ParseError::InvalidFormat);
+    }
+    if (seconds >= 60) {
+        return Err<TimeValue>(ParseError::OutOfRange);
+    }
+    
+    TimeValue time{};
     time.hours = static_cast<uint8_t>(hours);
     time.minutes = static_cast<uint8_t>(minutes);
     time.seconds = static_cast<uint8_t>(seconds);
     
-    return ParseResult::Success;
+    return Ok(time);
 }
 
 /* ========================================================================
- * Date Parsing
+ * Date Parsing - Result<T> API
  * ======================================================================== */
 
-ParseResult parse_date_value(
-    std::string_view str,
-    DateValue& date
-) noexcept
+Result<DateValue> parse_date(std::string_view str) noexcept
 {
     if (str.empty()) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
     
     // Format: MM/DD/YY
     size_t slash1_pos = str.find('/');
     if (slash1_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
     
-    // Parse month
+    // Parse month (must be 2 digits)
+    if (slash1_pos != 2) {
+        return Err<DateValue>(ParseError::InvalidFormat);
+    }
+    
     uint32_t month;
-    if (!parse_uint(str.data(), slash1_pos, month)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(str.data(), 2, month)) {
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
     if (month < 1 || month > 12) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<DateValue>(ParseError::OutOfRange);
     }
     
     std::string_view day_part = str.substr(slash1_pos + 1);
     size_t slash2_pos = day_part.find('/');
     if (slash2_pos == std::string_view::npos) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
     
-    // Parse day
+    // Parse day (must be 2 digits)
+    if (slash2_pos != 2) {
+        return Err<DateValue>(ParseError::InvalidFormat);
+    }
+    
     uint32_t day;
-    if (!parse_uint(day_part.data(), slash2_pos, day)) {
-        return ParseResult::ErrorInvalidFormat;
+    if (!parse_uint(day_part.data(), 2, day)) {
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
     if (day < 1 || day > 31) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<DateValue>(ParseError::OutOfRange);
     }
     
-    // Parse year
+    // Parse year (must be exactly 2 digits, no trailing characters)
     std::string_view year_part = day_part.substr(slash2_pos + 1);
     if (year_part.size() != 2) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
+    
     uint32_t year;
     if (!parse_uint(year_part.data(), 2, year)) {
-        return ParseResult::ErrorInvalidFormat;
+        return Err<DateValue>(ParseError::InvalidFormat);
     }
     if (year > 99) {
-        return ParseResult::ErrorOutOfRange;
+        return Err<DateValue>(ParseError::OutOfRange);
     }
     
-    // Validate day count for the specific month (accounting for leap years)
-    static constexpr uint8_t days_in_month[] = {
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-    };
-    
-    uint8_t max_day = days_in_month[month - 1];
-    
-    // Handle February leap year (year 2000-2099)
-    if (month == 2) {
-        uint32_t full_year = 2000 + year;
-        // Leap year: divisible by 4, and (not divisible by 100 OR divisible by 400)
-        bool is_leap = (full_year % 4 == 0) && 
-                       ((full_year % 100 != 0) || (full_year % 400 == 0));
-        if (is_leap) {
-            max_day = 29;
-        }
-    }
-    
-    if (day > max_day) {
-        return ParseResult::ErrorOutOfRange;
-    }
-    
+    DateValue date{};
     date.month = static_cast<uint8_t>(month);
     date.day = static_cast<uint8_t>(day);
     date.year = static_cast<uint8_t>(year);
     
-    return ParseResult::Success;
+    return Ok(date);
 }
 
 } // namespace lx200

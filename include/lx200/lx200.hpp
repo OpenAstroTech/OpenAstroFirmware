@@ -29,6 +29,9 @@
 #include <cstdint>
 #include <optional>
 #include <string_view>
+#include <type_traits>
+#include <utility>
+#include <variant>
 
 namespace lx200
 {
@@ -78,19 +81,95 @@ enum class PrecisionMode : uint8_t {
 };
 
 /**
- * @brief Parse result codes
- *
- * Indicates success or specific failure mode for parsing operations.
- * Success = 0 for zassert_ok compatibility
+ * @brief Parse error types
  */
-enum class ParseResult : uint8_t {
-	Success = 0,        ///< Parsing succeeded (0 for compatibility)
-	Incomplete,         ///< Need more characters
-	ErrorInvalidFormat, ///< Format doesn't match expected pattern
-	ErrorOutOfRange,    ///< Numeric value out of valid range
-	ErrorBufferFull,    ///< Command exceeds buffer capacity
-	ErrorGeneral        ///< Other parsing error
+enum class ParseError : uint8_t {
+	Incomplete = 1,
+	InvalidFormat,
+	OutOfRange,
+	BufferFull,
+	General
 };
+
+/**
+ * @brief Unit type for void Results
+ */
+struct Unit {};
+
+/**
+ * @brief Functional Result<T> type based on std::variant
+ * 
+ * Type-safe error handling that replaces error codes.
+ */
+template<typename T>
+class Result {
+private:
+	std::variant<T, ParseError> data_;
+	
+public:
+	constexpr explicit Result(const T& value) noexcept : data_(value) {}
+	constexpr explicit Result(T&& value) noexcept : data_(std::move(value)) {}
+	constexpr explicit Result(ParseError error) noexcept : data_(error) {}
+	
+	constexpr bool is_ok() const noexcept {
+		return std::holds_alternative<T>(data_);
+	}
+	
+	constexpr bool is_error() const noexcept {
+		return std::holds_alternative<ParseError>(data_);
+	}
+	
+	constexpr const T& value() const {
+		return std::get<T>(data_);
+	}
+	
+	constexpr T& value() {
+		return std::get<T>(data_);
+	}
+	
+	constexpr ParseError error() const {
+		return std::get<ParseError>(data_);
+	}
+	
+	constexpr T value_or(const T& default_value) const {
+		return is_ok() ? value() : default_value;
+	}
+	
+	template<typename OkFn, typename ErrFn>
+	constexpr auto match(OkFn&& ok_fn, ErrFn&& err_fn) const {
+		return is_ok() ? ok_fn(value()) : err_fn(error());
+	}
+};
+
+/**
+ * @brief Result type for void operations
+ */
+using VoidResult = Result<Unit>;
+
+/**
+ * @brief Factory for successful Results
+ */
+template<typename T>
+constexpr Result<std::remove_reference_t<T>> Ok(const T& value) noexcept {
+	return Result<std::remove_reference_t<T>>(value);
+}
+
+template<typename T>
+constexpr Result<std::remove_reference_t<T>> Ok(T&& value) noexcept {
+	return Result<std::remove_reference_t<T>>(std::forward<T>(value));
+}
+
+constexpr VoidResult Ok() noexcept {
+	return VoidResult(Unit{});
+}
+
+/**
+ * @brief Factory for error Results
+ */
+template<typename T>
+constexpr Result<std::remove_reference_t<T>> Err(ParseError error) noexcept {
+	return Result<std::remove_reference_t<T>>(error);
+}
 
 /* ========================================================================
  * Coordinate Structures
@@ -317,13 +396,13 @@ class ParserState
 	 * @brief Feed one character to the parser
 	 *
 	 * @param c Character to process
-	 * @return ParseResult indicating current state
+	 * @return VoidResult
 	 *
-	 * Returns Success when '#' terminator received.
-	 * Returns Incomplete while building command.
-	 * Returns error codes for invalid input.
+	 * Returns Ok() when character accepted (including terminator).
+	 * Check is_command_ready() after Ok() to see if command complete.
+	 * Returns Err() for invalid input or buffer full.
 	 */
-	ParseResult feed_character(char c) noexcept;
+	VoidResult feed_character(char c) noexcept;
 
 	/**
 	 * @brief Check if a complete command is ready
@@ -404,7 +483,7 @@ class ParserState
 };
 
 /* ========================================================================
- * Parsing Functions
+ * Functional Parsing API - Result<T> based
  * ======================================================================== */
 
 /**
@@ -412,58 +491,50 @@ class ParserState
  *
  * @param str String in format HH:MM:SS or HH:MM.T
  * @param mode Precision mode (High or Low)
- * @param[out] coord Parsed coordinate on success
- * @return ParseResult::Success or error code
+ * @return Result<RACoordinate> containing parsed coordinate or error
  */
-ParseResult parse_ra_coordinate(std::string_view str, PrecisionMode mode,
-				RACoordinate &coord) noexcept;
+Result<RACoordinate> parse_ra(std::string_view str, PrecisionMode mode) noexcept;
 
 /**
  * @brief Parse Declination coordinate string
  *
  * @param str String in format sDD*MM:SS or sDD*MM
  * @param mode Precision mode (High or Low)
- * @param[out] coord Parsed coordinate on success
- * @return ParseResult::Success or error code
+ * @return Result<DECCoordinate> containing parsed coordinate or error
  */
-ParseResult parse_dec_coordinate(std::string_view str, PrecisionMode mode,
-				 DECCoordinate &coord) noexcept;
+Result<DECCoordinate> parse_dec(std::string_view str, PrecisionMode mode) noexcept;
 
 /**
  * @brief Parse Latitude coordinate string
  *
  * @param str String in format sDD*MM
- * @param[out] coord Parsed coordinate on success
- * @return ParseResult::Success or error code
+ * @return Result<LatitudeCoordinate> containing parsed coordinate or error
  */
-ParseResult parse_latitude_coordinate(std::string_view str, LatitudeCoordinate &coord) noexcept;
+Result<LatitudeCoordinate> parse_latitude(std::string_view str) noexcept;
 
 /**
  * @brief Parse Longitude coordinate string
  *
  * @param str String in format DDD*MM
- * @param[out] coord Parsed coordinate on success
- * @return ParseResult::Success or error code
+ * @return Result<LongitudeCoordinate> containing parsed coordinate or error
  */
-ParseResult parse_longitude_coordinate(std::string_view str, LongitudeCoordinate &coord) noexcept;
+Result<LongitudeCoordinate> parse_longitude(std::string_view str) noexcept;
 
 /**
  * @brief Parse Time value string
  *
  * @param str String in format HH:MM:SS
- * @param[out] time Parsed time on success
- * @return ParseResult::Success or error code
+ * @return Result<TimeValue> containing parsed time or error
  */
-ParseResult parse_time_value(std::string_view str, TimeValue &time) noexcept;
+Result<TimeValue> parse_time(std::string_view str) noexcept;
 
 /**
  * @brief Parse Date value string
  *
  * @param str String in format MM/DD/YY
- * @param[out] date Parsed date on success
- * @return ParseResult::Success or error code
+ * @return Result<DateValue> containing parsed date or error
  */
-ParseResult parse_date_value(std::string_view str, DateValue &date) noexcept;
+Result<DateValue> parse_date(std::string_view str) noexcept;
 
 } // namespace lx200
 
