@@ -43,14 +43,19 @@ namespace lx200
 /**
  * @brief LX200 command family classification
  *
- * Commands are grouped by their first character after the ':' prefix.
+ * Commands are grouped by their first character(s) after the ':' prefix.
  * This enables fast lookup and categorization.
+ * 
+ * Special cases:
+ * - Most commands: Single character designator (e.g., :Gxx#, :Mxx#)
+ * - Dollar commands: Two-character designator starting with '$' (e.g., :$Bxx#, :$Qxx#)
  * 
  * Note: Some command families have semantic groupings across multiple
  * prefixes (e.g., date/time commands span C, G, H, S families).
  */
 enum class CommandFamily : uint8_t {
 	Alignment = 'A',  ///< Telescope alignment commands
+	Backlash = '$',   ///< Active backlash compensation (:$B commands, LX200GPS)
 	Reticle = 'B',    ///< Reticle brightness and accessory control
 	Sync = 'C',       ///< Sync control (telescope position synchronization)
 	Distance = 'D',   ///< Distance bars
@@ -65,6 +70,7 @@ enum class CommandFamily : uint8_t {
 	Movement = 'M',   ///< Slew and movement control
 	Precision = 'P',  ///< Toggle precision mode
 	Quit = 'Q',       ///< Stop/quit movement
+	SmartDrive = '@', ///< Smart Drive PEC control (:$Q commands, LX200GPS/LX16")
 	Derotator = 'r',  ///< Field de-rotator control (lowercase r, LX16")
 	Rate = 'R',       ///< Slew rate control
 	SetInfo = 'S',    ///< Set telescope information
@@ -483,8 +489,8 @@ class ParserState
 	bool command_complete_{false};                 ///< Command complete flag
 	PrecisionMode precision_{PrecisionMode::High}; ///< Current precision mode
 
-	/// Identify command family from first character
-	CommandFamily identify_family(char first_char) const noexcept;
+	/// Identify command family from command name (handles both single-char and $-prefixed)
+	CommandFamily identify_family(std::string_view name) const noexcept;
 
 	/// Split command name from parameters
 	void parse_command_parts(std::string_view &name, std::string_view &params) const noexcept;

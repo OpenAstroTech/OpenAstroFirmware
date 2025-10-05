@@ -79,6 +79,90 @@ ZTEST(lx200, test_reticle_commands)
 }
 
 /**
+ * @brief Test Backlash command family ($B)
+ * 
+ * According to LX200CommandSet.md Section $B:
+ * - :$BAdd# - Set Altitude/Dec Antibacklash [LX200GPS]
+ * - :$BZdd# - Set Azimuth/RA Antibacklash [LX200GPS]
+ * 
+ * These are special two-character designator commands starting with '$'.
+ */
+ZTEST(lx200, test_backlash_commands)
+{
+	ParserState parser;
+
+	// :$BA15# - Set Altitude/Dec antibacklash to 15
+	for (const char c : std::string_view(":$BA15#")) {
+		parser.feed_character(c);
+	}
+	auto cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse $BA command");
+	zassert_equal(cmd->family, CommandFamily::Backlash, "$BA should be Backlash family");
+	zassert_equal(std::string_view(cmd->name), "$BA", "Command name should be $BA");
+	zassert_equal(std::string_view(cmd->parameters), "15", "Parameters should be 15");
+
+	// :$BZ20# - Set Azimuth/RA antibacklash to 20
+	parser.reset();
+	for (const char c : std::string_view(":$BZ20#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse $BZ command");
+	zassert_equal(cmd->family, CommandFamily::Backlash, "$BZ should be Backlash family");
+	zassert_equal(std::string_view(cmd->name), "$BZ", "Command name should be $BZ");
+	zassert_equal(std::string_view(cmd->parameters), "20", "Parameters should be 20");
+}
+
+/**
+ * @brief Test SmartDrive command family ($Q)
+ * 
+ * According to LX200CommandSet.md Section $Q:
+ * - :$Q# - Toggle Smart Drive PEC on/off for both axes
+ * - :$QA+# - Enable Dec/Alt PEC [LX200GPS]
+ * - :$QA-# - Disable Dec/Alt PEC [LX200GPS]
+ * - :$QZ+# - Enable RA/AZ PEC [LX200GPS]
+ * - :$QZ-# - Disable RA/AZ PEC [LX200GPS]
+ * 
+ * These are special two-character designator commands starting with '$'.
+ */
+ZTEST(lx200, test_smartdrive_commands)
+{
+	ParserState parser;
+
+	// :$Q# - Toggle Smart Drive PEC (no parameters)
+	for (const char c : std::string_view(":$Q#")) {
+		parser.feed_character(c);
+	}
+	auto cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse $Q command");
+	zassert_equal(cmd->family, CommandFamily::SmartDrive, "$Q should be SmartDrive family");
+	zassert_equal(std::string_view(cmd->name), "$Q", "Command name should be $Q");
+	zassert_true(cmd->parameters.empty(), "Parameters should be empty");
+
+	// :$QA+# - Enable Dec PEC
+	parser.reset();
+	for (const char c : std::string_view(":$QA+#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse $QA command");
+	zassert_equal(cmd->family, CommandFamily::SmartDrive, "$QA should be SmartDrive family");
+	zassert_equal(std::string_view(cmd->name), "$QA", "Command name should be $QA");
+	zassert_equal(std::string_view(cmd->parameters), "+", "Parameters should be +");
+
+	// :$QZ-# - Disable RA PEC
+	parser.reset();
+	for (const char c : std::string_view(":$QZ-#")) {
+		parser.feed_character(c);
+	}
+	cmd = parser.get_command();
+	zassert_true(cmd.has_value(), "Should parse $QZ command");
+	zassert_equal(cmd->family, CommandFamily::SmartDrive, "$QZ should be SmartDrive family");
+	zassert_equal(std::string_view(cmd->name), "$QZ", "Command name should be $QZ");
+	zassert_equal(std::string_view(cmd->parameters), "-", "Parameters should be -");
+}
+
+/**
  * @brief Test Sync command family (C)
  * 
  * According to LX200CommandSet.md Section C:

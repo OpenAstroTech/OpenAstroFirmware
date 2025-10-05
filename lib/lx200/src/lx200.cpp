@@ -86,9 +86,10 @@ std::optional<Command> ParserState::get_command() noexcept
     std::string_view name, params;
     parse_command_parts(name, params);
     
-    // Identify command family by first character
-    // Case-sensitive mapping (e.g., 'g' = GPS, 'G' = GetInfo)
-    CommandFamily family = identify_family(name.empty() ? '\0' : name[0]);
+    // Identify command family
+    // Most commands: by first character (e.g., 'G' = GetInfo, 'g' = GPS)
+    // Dollar commands: by first two characters (e.g., '$B' = Backlash, '$Q' = SmartDrive)
+    CommandFamily family = identify_family(name);
     
     // Create command
     Command cmd{
@@ -106,10 +107,24 @@ std::optional<Command> ParserState::get_command() noexcept
     return cmd;
 }
 
-CommandFamily ParserState::identify_family(char first_char) const noexcept
+CommandFamily ParserState::identify_family(std::string_view name) const noexcept
 {
-    // Direct character-to-family mapping
-    switch (first_char) {
+    if (name.empty()) {
+        return CommandFamily::Unknown;
+    }
+    
+    // Special handling for dollar-prefixed commands (two-character designators)
+    if (name[0] == '$' && name.length() >= 2) {
+        switch (name[1]) {
+            case 'B': return CommandFamily::Backlash;   // :$BAdd#, :$BZdd#
+            case 'Q': return CommandFamily::SmartDrive; // :$Q#, :$QA+#, :$QZ-#
+            default:  return CommandFamily::Unknown;
+        }
+    }
+    
+    // Standard single-character designators
+    // Case-sensitive mapping (e.g., 'g' = GPS, 'G' = GetInfo)
+    switch (name[0]) {
         case 'A': return CommandFamily::Alignment;
         case 'B': return CommandFamily::Reticle;
         case 'C': return CommandFamily::Sync;
@@ -145,6 +160,23 @@ void ParserState::parse_command_parts(std::string_view& name, std::string_view& 
     if (full_command.empty()) {
         name = std::string_view{};
         params = std::string_view{};
+        return;
+    }
+    
+    // Special handling for dollar-prefixed commands
+    // Pattern: :$BAdd# -> name="$BA", params="dd"
+    //          :$Q# -> name="$Q", params=""
+    if (full_command[0] == '$' && full_command.length() >= 2) {
+        if (full_command.length() > 3) {
+            // $X + second char + third char + params
+            // Examples: :$BAdd# -> "$BA" + "dd", :$QZ+# -> "$QZ" + "+"
+            name = full_command.substr(0, 3);
+            params = full_command.substr(3);
+        } else {
+            // Just :$XY# with no parameters
+            name = full_command;
+            params = std::string_view{};
+        }
         return;
     }
     
