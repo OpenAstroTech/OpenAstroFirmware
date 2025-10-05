@@ -90,10 +90,13 @@ std::optional<Command> ParserState::get_command() noexcept
     CommandFamily family = CommandFamily::Unknown;
     
     // Special cases for date/time commands (semantic grouping)
-    if (name == "GC" || name == "GL" || name == "Ga" || name == "Gc" ||
-        name == "SC" || name == "SL" || name == "SG" || name == "SH") {
+    // GET commands (G*) are semantically DateTime queries
+    // SET commands (S*) with parameters use default SetInfo family
+    if (name == "GC" || name == "GL" || name == "Ga" || name == "Gc" || name == "H") {
         family = CommandFamily::DateTime;
     }
+    // SL, SG, SH, SC without parameters would be DateTime, but LX200 protocol
+    // always uses them WITH parameters, so they use SetInfo family below
     // Default: use first character mapping
     // NOTE: :gT# (lowercase g) is GPS family, not GetInfo
     // (:GT# with uppercase G is GetInfo - "Get tracking rate")
@@ -129,7 +132,7 @@ CommandFamily ParserState::identify_family(char first_char) const noexcept
         case 'G': return CommandFamily::GetInfo;
         case 'g': return CommandFamily::GPS;
         case 'h': return CommandFamily::Home;
-        case 'H': return CommandFamily::Home;  // Hour angle also maps to Home
+        case 'H': return CommandFamily::DateTime;  // :H# is time format toggle (handled specially above)
         case 'I': return CommandFamily::Initialize;
         case 'L': return CommandFamily::Library;
         case 'M': return CommandFamily::Movement;
