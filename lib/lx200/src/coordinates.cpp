@@ -431,6 +431,65 @@ Result<TimeValue> parse_time(std::string_view str) noexcept
  * Date Parsing - Result<T> API
  * ======================================================================== */
 
+/**
+ * @brief Check if a year is a leap year
+ * 
+ * @param year Two-digit year (00-99 representing 2000-2099)
+ * @return true if leap year, false otherwise
+ * 
+ * Leap year rules:
+ * - Divisible by 4: leap year
+ * - Divisible by 100: not a leap year (exception to rule 1)
+ * - Divisible by 400: leap year (exception to rule 2)
+ * 
+ * For years 2000-2099 (00-99):
+ * - 2000 (00) is divisible by 400: leap year
+ * - All other years divisible by 4 are leap years
+ */
+static constexpr bool is_leap_year(uint32_t year) noexcept
+{
+    // Convert two-digit year to full year (2000-2099)
+    uint32_t full_year = 2000 + year;
+    
+    // Check leap year rules
+    if (full_year % 400 == 0) {
+        return true;  // Divisible by 400
+    }
+    if (full_year % 100 == 0) {
+        return false;  // Divisible by 100 but not 400
+    }
+    return (full_year % 4 == 0);  // Divisible by 4
+}
+
+// Days in each month (non-leap year)
+static constexpr uint8_t DAYS_PER_MONTH[12] = {
+    31, 28, 31, 30, 31, 30,  // Jan-Jun
+    31, 31, 30, 31, 30, 31   // Jul-Dec
+};
+
+/**
+ * @brief Get the maximum number of days in a given month
+ * 
+ * @param month Month number (1-12)
+ * @param year Two-digit year (00-99)
+ * @return Maximum number of days in the month
+ */
+static constexpr uint32_t days_in_month(uint32_t month, uint32_t year) noexcept
+{
+    if (month < 1 || month > 12) {
+        return 0;
+    }
+    
+    uint32_t max_days = DAYS_PER_MONTH[month - 1];
+    
+    // February in leap year has 29 days
+    if (month == 2 && is_leap_year(year)) {
+        max_days = 29;
+    }
+    
+    return max_days;
+}
+
 Result<DateValue> parse_date(std::string_view str) noexcept
 {
     if (str.empty()) {
@@ -486,6 +545,12 @@ Result<DateValue> parse_date(std::string_view str) noexcept
         return Err<DateValue>(ParseError::InvalidFormat);
     }
     if (year > 99) {
+        return Err<DateValue>(ParseError::OutOfRange);
+    }
+    
+    // Validate day is within valid range for the specific month
+    uint32_t max_days = days_in_month(month, year);
+    if (day > max_days) {
         return Err<DateValue>(ParseError::OutOfRange);
     }
     

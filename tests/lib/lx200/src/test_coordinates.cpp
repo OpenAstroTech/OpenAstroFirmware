@@ -543,4 +543,291 @@ ZTEST(lx200_coordinates, test_date_empty_string)
 	zassert_equal(result.error(), ParseError::InvalidFormat);
 }
 
+/* ========================================================================
+ * Date Validation - Month-Specific Day Limits
+ * ======================================================================== */
+
+ZTEST(lx200_coordinates, test_date_february_30_invalid)
+{
+	// February has only 28/29 days
+	auto result = parse_date("02/30/25");
+	
+	zassert_true(result.is_error(), "Feb 30 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_february_29_non_leap_year)
+{
+	// 2023 is not a leap year
+	auto result = parse_date("02/29/23");
+	
+	zassert_true(result.is_error(), "Feb 29 in non-leap year should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_february_29_leap_year_valid)
+{
+	// 2024 is a leap year
+	auto result = parse_date("02/29/24");
+	
+	zassert_true(result.is_ok(), "Feb 29 in leap year should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 2);
+	zassert_equal(date.day, 29);
+	zassert_equal(date.year, 24);
+}
+
+ZTEST(lx200_coordinates, test_date_february_28_non_leap_year_valid)
+{
+	// Feb 28 should always be valid
+	auto result = parse_date("02/28/23");
+	
+	zassert_true(result.is_ok(), "Feb 28 should always be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 2);
+	zassert_equal(date.day, 28);
+	zassert_equal(date.year, 23);
+}
+
+ZTEST(lx200_coordinates, test_date_april_31_invalid)
+{
+	// April has only 30 days
+	auto result = parse_date("04/31/25");
+	
+	zassert_true(result.is_error(), "April 31 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_april_30_valid)
+{
+	// April 30 is valid
+	auto result = parse_date("04/30/25");
+	
+	zassert_true(result.is_ok(), "April 30 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 4);
+	zassert_equal(date.day, 30);
+}
+
+ZTEST(lx200_coordinates, test_date_june_31_invalid)
+{
+	// June has only 30 days
+	auto result = parse_date("06/31/25");
+	
+	zassert_true(result.is_error(), "June 31 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_june_30_valid)
+{
+	// June 30 is valid
+	auto result = parse_date("06/30/25");
+	
+	zassert_true(result.is_ok(), "June 30 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 6);
+	zassert_equal(date.day, 30);
+}
+
+ZTEST(lx200_coordinates, test_date_september_31_invalid)
+{
+	// September has only 30 days
+	auto result = parse_date("09/31/25");
+	
+	zassert_true(result.is_error(), "September 31 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_september_30_valid)
+{
+	// September 30 is valid
+	auto result = parse_date("09/30/25");
+	
+	zassert_true(result.is_ok(), "September 30 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 9);
+	zassert_equal(date.day, 30);
+}
+
+ZTEST(lx200_coordinates, test_date_november_31_invalid)
+{
+	// November has only 30 days
+	auto result = parse_date("11/31/25");
+	
+	zassert_true(result.is_error(), "November 31 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_november_30_valid)
+{
+	// November 30 is valid
+	auto result = parse_date("11/30/25");
+	
+	zassert_true(result.is_ok(), "November 30 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 11);
+	zassert_equal(date.day, 30);
+}
+
+ZTEST(lx200_coordinates, test_date_january_31_valid)
+{
+	// January has 31 days
+	auto result = parse_date("01/31/25");
+	
+	zassert_true(result.is_ok(), "January 31 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 1);
+	zassert_equal(date.day, 31);
+}
+
+ZTEST(lx200_coordinates, test_date_march_31_valid)
+{
+	// March has 31 days
+	auto result = parse_date("03/31/25");
+	
+	zassert_true(result.is_ok(), "March 31 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 3);
+	zassert_equal(date.day, 31);
+}
+
+ZTEST(lx200_coordinates, test_date_may_31_valid)
+{
+	// May has 31 days
+	auto result = parse_date("05/31/25");
+	
+	zassert_true(result.is_ok(), "May 31 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 5);
+	zassert_equal(date.day, 31);
+}
+
+ZTEST(lx200_coordinates, test_date_july_31_valid)
+{
+	// July has 31 days
+	auto result = parse_date("07/31/25");
+	
+	zassert_true(result.is_ok(), "July 31 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 7);
+	zassert_equal(date.day, 31);
+}
+
+ZTEST(lx200_coordinates, test_date_august_31_valid)
+{
+	// August has 31 days
+	auto result = parse_date("08/31/25");
+	
+	zassert_true(result.is_ok(), "August 31 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 8);
+	zassert_equal(date.day, 31);
+}
+
+ZTEST(lx200_coordinates, test_date_october_31_valid)
+{
+	// October has 31 days
+	auto result = parse_date("10/31/25");
+	
+	zassert_true(result.is_ok(), "October 31 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 10);
+	zassert_equal(date.day, 31);
+}
+
+/* ========================================================================
+ * Date Validation - Leap Year Boundary Cases
+ * ======================================================================== */
+
+ZTEST(lx200_coordinates, test_date_leap_year_2020)
+{
+	// 2020 is a leap year (divisible by 4)
+	auto result = parse_date("02/29/20");
+	
+	zassert_true(result.is_ok(), "2020 is a leap year, Feb 29 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 2);
+	zassert_equal(date.day, 29);
+	zassert_equal(date.year, 20);
+}
+
+ZTEST(lx200_coordinates, test_date_leap_year_2000)
+{
+	// 2000 is a leap year (divisible by 400)
+	auto result = parse_date("02/29/00");
+	
+	zassert_true(result.is_ok(), "2000 is a leap year, Feb 29 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 2);
+	zassert_equal(date.day, 29);
+	zassert_equal(date.year, 0);
+}
+
+ZTEST(lx200_coordinates, test_date_non_leap_year_2021)
+{
+	// 2021 is not a leap year
+	auto result = parse_date("02/29/21");
+	
+	zassert_true(result.is_error(), "2021 is not a leap year, Feb 29 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_non_leap_year_2022)
+{
+	// 2022 is not a leap year
+	auto result = parse_date("02/29/22");
+	
+	zassert_true(result.is_error(), "2022 is not a leap year, Feb 29 should be invalid");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
+ZTEST(lx200_coordinates, test_date_leap_year_2028)
+{
+	// 2028 is a leap year (divisible by 4)
+	auto result = parse_date("02/29/28");
+	
+	zassert_true(result.is_ok(), "2028 is a leap year, Feb 29 should be valid");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 2);
+	zassert_equal(date.day, 29);
+	zassert_equal(date.year, 28);
+}
+
+ZTEST(lx200_coordinates, test_date_february_28_leap_year_valid)
+{
+	// Feb 28 should be valid even in leap years
+	auto result = parse_date("02/28/24");
+	
+	zassert_true(result.is_ok(), "Feb 28 should be valid in leap years");
+	
+	auto date = result.value();
+	zassert_equal(date.month, 2);
+	zassert_equal(date.day, 28);
+	zassert_equal(date.year, 24);
+}
+
+ZTEST(lx200_coordinates, test_date_february_30_leap_year_invalid)
+{
+	// Feb 30 is never valid, even in leap years
+	auto result = parse_date("02/30/24");
+	
+	zassert_true(result.is_error(), "Feb 30 should be invalid even in leap years");
+	zassert_equal(result.error(), ParseError::OutOfRange);
+}
+
 ZTEST_SUITE(lx200_coordinates, NULL, NULL, NULL, NULL, NULL);
