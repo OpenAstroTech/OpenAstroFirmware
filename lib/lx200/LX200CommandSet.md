@@ -4,6 +4,11 @@
 *Original: 9 October 2002*  
 *OAT Extensions: Current as of Firmware V1.13.12*
 
+*Source Reference: [OpenAstroTracker-Firmware](https://github.com/OpenAstroTech/OpenAstroTracker-Firmware/blob/main/src/MeadeCommandProcessor.cpp)*
+
+> **Note**: This documentation is manually synchronized with the OpenAstroTracker firmware implementation.
+> The firmware is the authoritative source for command behavior.
+
 ## Introduction
 
 This document combines two protocol specifications:
@@ -651,6 +656,12 @@ Returns: Nothing
 Returns: Nothing
 
 #### `:Qw#` Halt westward Slews
+
+Returns: Nothing
+
+#### `:Qa#` Halt all direction Slews [OAT Extension]
+
+Halts slewing in all directions (equivalent to stopping n, s, e, w individually).
 
 Returns: Nothing
 
@@ -1411,6 +1422,17 @@ Returns:
 - `float#` - If x is 'U' (upper) or 'L' (lower)
 - `float|float#` - If x is omitted (both limits)
 
+Parameters:
+- `x` - Optional parameter: 'U' for upper limit only, 'L' for lower limit only, omit for both
+
+#### `:XGDP#` Get DEC Parking Position [OAT Extension] **OBSOLETE/DISABLED**
+
+Gets the number of steps from the home position to the parking position for DEC.
+
+Returns: `0#`
+
+**Note**: This command is obsolete and disabled in current firmware. It always returns 0.
+
 #### `:XGS#` Get Tracking Speed Adjustment [OAT Extension]
 
 Get the adjustment factor used to speed up (>1.0) or slow down (<1.0) tracking speed.
@@ -1496,6 +1518,14 @@ Get the current LST of the mount.
 
 Returns: `HHMMSS#`
 
+#### `:XGO#` Get Log Buffer [OAT Extension]
+
+Get the current debug log buffer contents. This is a debugging command used for troubleshooting.
+
+Returns: `<log_content>#`
+
+**Note**: This is a debugging command primarily used for development and troubleshooting.
+
 #### `:XSBn#` Set Backlash Correction Steps [OAT Extension]
 
 Sets the number of steps the RA stepper needs to overshoot and backtrack when slewing east.
@@ -1549,9 +1579,20 @@ Parameters:
 
 #### `:XSDLl#` Clear DEC Lower Limit [OAT Extension]
 
-Resets the lower limit for DEC axis to configuration-defined position.
+Resets the lower limit for DEC axis to configuration-defined position. If not configured, the limit is cleared.
 
 Returns: Nothing
+
+#### `:XSDPnnnn#` Set DEC Parking Position Offset [OAT Extension] **OBSOLETE/DISABLED**
+
+This stores the number of steps needed to move from home to the parking position.
+
+Returns: Nothing
+
+Parameters:
+- `nnnn` - Number of steps from home to parking position
+
+**Note**: This command is obsolete and disabled in current firmware. Calling it has no effect.
 
 #### `:XSSn.nnn#` Set Tracking Speed Adjustment [OAT Extension]
 
