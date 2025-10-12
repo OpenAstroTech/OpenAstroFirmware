@@ -5,6 +5,20 @@
 **Status**: Draft  
 **Input**: User description: "Telescope Mount Control System for DIY Astronomical Mounts"
 
+## Clarifications
+
+### Session 2025-10-12
+
+- Q: How should the LX200 protocol handler (serial I/O thread) communicate with the mount controller (running on separate thread)? → A: Message Queue + Shared State with Mutex - Commands sent via Zephyr message queue, queries read from mutex-protected shared mount state
+- Q: Which status communication pattern should be used between mount thread and LX200 handler? → A: Hybrid (Pull for queries, Push for events) - Queries pull from shared state for fast reads, critical events (slew complete, errors) push notifications
+- Q: How should errors be communicated given LX200 protocol's limited error reporting? → A: Log all errors + Return protocol-compliant responses - Verbose logging for troubleshooting, standard LX200 error codes for software compatibility
+- Q: Where/how should calibration data persist across power cycles? → A: Zephyr Settings Subsystem (NVS) - Use Zephyr's settings API with NVS backend on internal flash for wear-leveling and RTOS integration
+- Q: How should tracking steps be generated for precise timing? → A: Use stepper driver's built-in step signal generator (e.g., TMC5160) where available, fall back to STM32 hardware timer interrupt for basic drivers
+- Q: What motion profile should be used for slewing to targets? → A: Trapezoidal profile with configurable acceleration - Linear acceleration/deceleration ramps, user-tunable for mount characteristics
+- Q: How should mount controller internal architecture be organized? → A: Layered architecture - Protocol → Controller → Motion Planner → Stepper API, with clear separation of concerns and dependencies flowing downward
+- Q: How should different mount types (equatorial vs alt-azimuth) be abstracted? → A: Strategy pattern - Abstract MountKinematics interface with EquatorialKinematics and AltAzKinematics implementations for mount-specific coordinate transformations
+- Q: How should different stepper driver types be abstracted? → A: Zephyr stepper driver subsystem - Use Zephyr's built-in stepper API with device tree configuration for hardware selection and driver parameters
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Remote Telescope Control from Astronomy Software (Priority: P1)
@@ -135,40 +149,45 @@ Users troubleshooting issues or monitoring their imaging session need clear visi
 #### Accuracy Requirements
 
 - **FR-006**: System MUST maintain pointing accuracy sufficient for astrophotography (target: within 5 arcseconds after calibration)
-- **FR-007**: System MUST maintain tracking accuracy to prevent visible star trails in long-exposure images (target: tracking rate precision within 0.1 arcseconds per second)
-- **FR-008**: System MUST support coordinate synchronization to align mount's reference frame with actual sky position
-- **FR-009**: System MUST account for gear backlash and mechanical play in movement calculations
+- **FR-007**: System MUST maintain tracking accuracy to prevent visible star trails in long-exposure images (target: tracking rate precision within 1 arcsecond per second, achieved via stepper driver step generators like TMC5160 or STM32 hardware timer interrupts)
+- **FR-008**: System MUST use trapezoidal motion profiles with configurable acceleration/deceleration for slewing movements to reduce mechanical stress and improve positioning accuracy
+- **FR-009**: System MUST support coordinate synchronization to align mount's reference frame with actual sky position
+- **FR-010**: System MUST account for gear backlash and mechanical play in movement calculations
 
 #### Calibration and Setup Requirements
 
-- **FR-010**: System MUST accept user-provided date, time, and geographic location for celestial calculations
-- **FR-011**: System MUST support alignment procedures using known reference stars
-- **FR-012**: System MUST allow configuration of mount-specific parameters (gear ratios, motor specifications, mechanical limits)
-- **FR-013**: System MUST persist calibration data across power cycles
-- **FR-014**: System MUST validate configuration parameters for physical feasibility
+- **FR-011**: System MUST accept user-provided date, time, and geographic location for celestial calculations
+- **FR-012**: System MUST support alignment procedures using known reference stars
+- **FR-013**: System MUST allow configuration of mount-specific parameters (gear ratios, motor specifications, mechanical limits, acceleration profiles)
+- **FR-014**: System MUST persist calibration data (alignment model, location, motor parameters) across power cycles using Zephyr Settings Subsystem with NVS backend on internal flash
+- **FR-015**: System MUST validate configuration parameters for physical feasibility
 
 #### Hardware Support Requirements
 
-- **FR-015**: System MUST support multiple stepper motor driver types for RA and DEC axes
-- **FR-016**: System MUST support configurable motor step rates and microstepping modes
-- **FR-017**: System MUST support both equatorial and alt-azimuth mount types
-- **FR-018**: System MUST accommodate different motor and gearing specifications through configuration
-- **FR-019**: System MUST operate within hardware resource constraints (memory, processing capacity) of 32-bit microcontrollers
+- **FR-016**: System MUST support multiple stepper motor driver types (TMC5160, TMC2209, basic step/dir drivers) through Zephyr stepper driver subsystem with device tree configuration
+- **FR-017**: System MUST leverage advanced driver features (step signal generation, hardware ramp generators) when available, with fallback to MCU timer-based step generation for basic drivers
+- **FR-018**: System MUST support configurable motor step rates and microstepping modes via device tree parameters
+- **FR-019**: System MUST support both equatorial and alt-azimuth mount types through Strategy pattern abstraction (MountKinematics interface with mount-type-specific implementations)
+- **FR-020**: System MUST accommodate different motor and gearing specifications through device tree configuration (no firmware recompilation required)
+- **FR-021**: System MUST operate within hardware resource constraints (memory, processing capacity) of 32-bit microcontrollers
 
 #### Reliability and Safety Requirements
 
-- **FR-020**: System MUST operate continuously for extended periods (8+ hours) without degradation or failure
-- **FR-021**: System MUST handle error conditions gracefully without requiring restart
-- **FR-022**: System MUST implement safety limits to prevent mount from moving into physically impossible positions
-- **FR-023**: System MUST detect and recover from communication errors with control software
-- **FR-024**: System MUST implement timeout mechanisms to prevent runaway motor operation
+- **FR-022**: System MUST operate continuously for extended periods (8+ hours) without degradation or failure
+- **FR-023**: System MUST handle error conditions gracefully without requiring restart
+- **FR-024**: System MUST implement safety limits to prevent mount from moving into physically impossible positions
+- **FR-025**: System MUST detect and recover from communication errors with control software
+- **FR-026**: System MUST implement timeout mechanisms to prevent runaway motor operation
+- **FR-027**: System MUST implement thread-safe communication between LX200 protocol handler and mount controller using message queues for commands and mutex-protected shared state for queries
+- **FR-028**: System MUST support event notifications from mount controller to LX200 handler for critical state transitions (slew completion, errors) to enable efficient status polling
 
 #### Diagnostic and Monitoring Requirements
 
-- **FR-025**: System MUST log operational events, errors, and diagnostic information for troubleshooting
-- **FR-026**: System MUST provide current position, tracking state, and operational status on request
-- **FR-027**: System MUST record calibration parameters and alignment quality metrics
-- **FR-028**: System MUST provide feedback when commands cannot be executed or errors occur
+- **FR-029**: System MUST log all operational events, errors, and diagnostic information with sufficient detail for troubleshooting (verbose logging via Zephyr logging subsystem)
+- **FR-030**: System MUST return LX200 protocol-compliant error responses (standard `0`/`1` codes, protocol-defined error strings) to maintain astronomy software compatibility
+- **FR-031**: System MUST provide current position, tracking state, and operational status on request
+- **FR-032**: System MUST record calibration parameters and alignment quality metrics
+- **FR-033**: System MUST provide feedback when commands cannot be executed, using both logging (detailed) and protocol responses (compliant)
 
 ### Key Entities
 
@@ -185,6 +204,18 @@ Users troubleshooting issues or monitoring their imaging session need clear visi
 - **Motor Control Parameters**: Specifications for stepper motors including step rates, acceleration profiles, microstepping settings, and current limits. Different for each mount design.
 
 - **Alignment Model**: Mathematical representation of how the mount's mechanical axes correspond to celestial coordinates, including correction factors for imperfect polar alignment and mechanical errors.
+
+- **LX200 Protocol Handler**: Component running on serial I/O thread that receives commands from astronomy software via serial/USB interface. Parses LX200 protocol commands and coordinates with mount controller to execute them and generate responses.
+
+- **Mount Controller Thread**: Separate thread managing mount motors, tracking calculations, and position state. Receives commands via message queue from LX200 handler. Maintains shared state (current position, tracking status, calibration) protected by mutex for thread-safe read access. Internally organized as layered architecture with clear separation of concerns.
+
+- **Inter-Thread Communication**: Hybrid pattern where LX200 handler sends commands to mount controller via Zephyr message queue (non-blocking) and reads current state from mutex-protected shared memory. Mount controller pushes critical event notifications (slew complete, errors) back to LX200 handler for efficient status polling support.
+
+- **Layered Architecture**: System follows downward dependency flow: (1) LX200 Protocol Handler - parses commands and formats responses, (2) Mount Controller - coordinates high-level mount operations and state management, (3) Motion Planner - handles celestial coordinate transformations and trajectory planning, (4) Stepper API - abstracts hardware-specific motor control. Each layer testable independently.
+
+- **Mount Type Abstraction**: Motion Planner uses Strategy pattern with MountKinematics interface. Concrete implementations (EquatorialKinematics, AltAzKinematics) provide mount-type-specific coordinate transformations and tracking calculations. Mount type selected via configuration, allowing runtime or compile-time binding.
+
+- **Stepper Driver Abstraction**: System uses Zephyr's stepper driver subsystem (`include/zephyr/drivers/stepper.h`) for hardware abstraction. Driver type, parameters, and pin assignments configured via device tree. Supports TMC5160 (SPI-based with hardware features), TMC2209 (UART/standalone), and basic step/dir drivers through unified API.
 
 ## Success Criteria *(mandatory)*
 
@@ -207,6 +238,7 @@ Users troubleshooting issues or monitoring their imaging session need clear visi
 - **SC-012**: Users report that configuration and setup is easier than predecessor firmware
 - **SC-013**: Community reports fewer "show-stopping" bugs or reliability issues requiring firmware updates
 - **SC-014**: Advanced users successfully adapt the system to non-standard mount configurations
+- **SC-015**: Each architectural layer (Protocol, Controller, Motion Planner, Stepper API) can be unit tested independently with mocked dependencies
 
 ## Assumptions
 
