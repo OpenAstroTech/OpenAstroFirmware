@@ -48,21 +48,22 @@ Dec: "-12*00:00" = -12° 00' 00"
 
 ## Command Categories
 
+### 0. Initialization Commands
+
+#### I - Initialize Telescope
+**Request**: `:I#`
+**Response**: None
+**Effects**: Initializes mount, enters Serial Control Mode, displays RA/DEC on LCD
+**Notes**: Should be first command sent after connection, exits remote control mode
+
 ### 1. Alignment & Sync Commands
 
 #### CM - Synchronize Database (Sync)
 **Request**: `:CM#`
-**Response**: `"LX200: coordinates matched        #"` or `"N/A#"`
+**Response**: `"NONE#"` (standard LX200) or empty
 **Preconditions**: Target coordinates set via `:Sr#` and `:Sd#`
-**Effects**: Updates internal coordinate system to match current position with specified target
-**Errors**: Returns `"N/A#"` if coordinates invalid or no target set
-
-#### :Align - Align to Star
-**Request**: `::Align#`
-**Response**: None
-**Preconditions**: Mount pointed at known alignment star
-**Effects**: Adds current position as alignment reference
-**Notes**: Requires 2-3 alignment stars for full model
+**Effects**: Synchronizes mount to current target coordinates
+**Notes**: Tells mount what coordinates it is currently pointing at
 
 ### 2. Get Commands (Query Mount State)
 
@@ -264,25 +265,17 @@ Dec: "-12*00:00" = -12° 00' 00"
 
 #### D - Query Slew Status
 **Request**: `:D#`
-**Response**: `"#"` (slewing complete) or empty string (still slewing)
+**Response**: `"|#"` (still slewing) or `" #"` (slewing complete)
 **Notes**: Polled by client to detect slew completion
 **Example**:
 ```
 :MS#  → 0 (start slew)
-:D#   → "" (still slewing)
-:D#   → "" (still slewing)
-:D#   → "#" (complete)
+:D#   → "|#" (still slewing)
+:D#   → "|#" (still slewing)
+:D#   → " #" (complete - note the space)
 ```
 
-### 9. Initialization Commands
-
-#### I - Initialize Telescope
-**Request**: `:I#`
-**Response**: None
-**Effects**: Resets mount to known state, disables tracking, clears targets
-**Notes**: Should be first command sent after connection
-
-### 10. Precision Commands
+### 9. Precision Commands
 
 #### P - High Precision Mode
 **Request**: `:P#`
@@ -294,6 +287,75 @@ Dec: "-12*00:00" = -12° 00' 00"
 **Request**: `:U#`
 **Response**: None
 **Effects**: Toggles between high and low precision modes
+
+### 10. Additional Get Commands
+
+#### Ga - Get Local Time (12-hour format)
+**Request**: `:Ga#`
+**Response**: `"HH:MM:SS#"`
+**Notes**: Returns time in 12-hour format (modulo 12)
+
+#### Gc - Get Clock Format
+**Request**: `:Gc#`
+**Response**: `"24#"`
+**Notes**: Always returns 24-hour format
+
+#### GG - Get UTC Offset
+**Request**: `:GG#`
+**Response**: `"sHH#"`
+**Example**: `"-08#"` for Pacific Time
+**Notes**: Returns offset from UTC in hours (negative of timezone offset)
+
+#### GT - Get Tracking Rate
+**Request**: `:GT#`
+**Response**: `"60.0#"`
+**Notes**: Returns tracking rate in some unit
+
+#### GM, GN, GO, GP - Get Site Names
+**Request**: `:GM#`, `:GN#`, `:GO#`, `:GP#`
+**Response**: `"OAT1#"`, `"OAT2#"`, `"OAT3#"`, `"OAT4#"`
+**Notes**: Site name storage (4 slots)
+
+#### Gd - Get Target Declination
+**Request**: `:Gd#`
+**Response**: `"sDD*MM'SS#"`
+**Notes**: Returns target (not current) declination
+
+#### Gr - Get Target Right Ascension
+**Request**: `:Gr#`
+**Response**: `"HH:MM:SS#"`
+**Notes**: Returns target (not current) RA
+
+### 11. Additional Set Commands
+
+#### SHP - Set Home Point
+**Request**: `:SHP#`
+**Response**: `1`
+**Effects**: Sets current orientation as home position
+
+#### SH - Set Hour Angle
+**Request**: `:SHHH:MM#`
+**Response**: `1` (success) or `0` (failure)
+**Effects**: Sets Hour Angle (should be Polaris HA)
+
+#### SHL - Set LST Time
+**Request**: `:SHLHH:MM#`
+**Response**: `1` (success) or `0` (failure)
+**Effects**: Sets Local Sidereal Time
+
+#### SY - Synchronize Coordinates
+**Request**: `:SYsDD*MM:SS.HH:MM:SS#`
+**Response**: `1` (success) or `0` (failure)
+**Parameters**: Full RA and Dec coordinates
+**Effects**: Alternative sync format with both coordinates in one command
+
+### 12. Rate Control Commands
+
+#### Rs - Set Slew Rate (by letter)
+**Request**: `:Rss#`
+**Parameters**: `s` = 'S' (slew/fastest), 'M' (find/medium-fast), 'C' (centering/medium), 'G' (guiding/slowest)
+**Response**: None
+**Notes**: Alternative to RC/RG/RM/RS commands
 
 ## Command Execution Contracts
 
@@ -395,23 +457,6 @@ Verify against real clients:
 2. ASCOM driver compatibility
 3. INDI client compatibility
 4. SkySafari operation
-
-## Performance Contracts
-
-**Latency Requirements** (from constitution):
-- Command parsing: <10ms
-- Command execution (sync): <100ms
-- Command queue depth: 10 commands max
-- No blocking in serial I/O thread
-
-**Throughput**:
-- Handle 10 commands/sec sustained
-- Burst: 50 commands/sec for 1 second
-
-**Memory**:
-- Command buffer: 256 bytes per command
-- Response buffer: 128 bytes
-- Queue: 10 × 256 = 2.5KB total
 
 ## Next Steps
 

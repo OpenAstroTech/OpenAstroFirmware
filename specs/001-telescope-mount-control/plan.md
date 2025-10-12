@@ -41,8 +41,8 @@ Implement a complete telescope mount control system for DIY astronomical mounts 
 
 **Performance Goals**:
 - LX200 command response latency: <100ms (synchronous commands)
-- Tracking precision: ±5 arcseconds maintained continuously
-- Stepper control loop frequency: 1kHz minimum for smooth motion
+- Tracking precision: ±1 arcsecond maintained continuously
+- Stepper control loop frequency: 40kHz minimum for smooth motion
 - Memory footprint: <128KB RAM on STM32F407 (leaving headroom)
 - CPU utilization: <50% average to allow for background tasks
 
@@ -55,8 +55,6 @@ Implement a complete telescope mount control system for DIY astronomical mounts 
 - Single codebase must support multiple boards via device tree
 
 **Scale/Scope**:
-- ~10K lines of C++20 application/library code
-- ~2K lines of C driver code
 - ~50 LX200 protocol commands to implement
 - 3 target platforms (native_sim, robin_nano, nucleo_f446re)
 - 6 user stories with 20+ acceptance scenarios
@@ -86,7 +84,7 @@ Implement a complete telescope mount control system for DIY astronomical mounts 
 
 ### Principle III: Real-Time Performance & Reliability ✅
 
-- **Tracking Precision**: ✅ Target: ±5 arcseconds (per spec SC-005)
+- **Tracking Precision**: ✅ Target: ±1 arcsecond (per spec SC-005)
 - **Command Latency**: ✅ Target: <100ms (aligned with constitution)
 - **Memory Constraints**: ✅ Must fit in 128KB RAM (STM32F407 has 192KB)
 - **Deterministic Timing**: ✅ Will use Zephyr RTOS priority threads
